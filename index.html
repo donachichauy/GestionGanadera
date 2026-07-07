@@ -1770,15 +1770,37 @@ function renderExistencias(){
   }
   var byCampo='';
   if(!_exCampo&&state.campos.length>0){
-    byCampo='<div class="panel" style="margin-top:16px"><div class="panel-hdr"><h3>Distribución por campo</h3></div>'
-      +'<div class="tbl-wrap"><table class="exist-tbl"><thead><tr><th>Campo</th>'
-      +CAT_NAMES.map(function(c){return'<th style="font-size:9px">'+c+'</th>'}).join('')+'<th>Total</th></tr></thead><tbody>'
-      +state.campos.map(function(campo){
-        var cA=activos.filter(function(a){return a.campoId===campo.id});if(!cA.length)return'';
-        return'<tr><td style="white-space:nowrap;font-weight:700">'+campo.nombre+'</td>'
-          +CAT_NAMES.map(function(cat){var n=cA.filter(function(a){return a.categoria===cat}).length;return'<td>'+(n||'—')+'</td>'}).join('')
-          +'<td><b>'+cA.length+'</b></td></tr>';
-      }).join('')+'</tbody></table></div></div>';
+    var camposConDatos=state.campos.filter(function(campo){
+      return activos.some(function(a){return a.campoId===campo.id});
+    });
+    if(isMobile()){
+      var byCampoCards=camposConDatos.map(function(campo){
+        var cA=activos.filter(function(a){return a.campoId===campo.id});
+        var catsConDatos=CAT_NAMES.filter(function(cat){
+          return cA.some(function(a){return a.categoria===cat});
+        });
+        var catRows=catsConDatos.map(function(cat){
+          var n=cA.filter(function(a){return a.categoria===cat}).length;
+          return '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px">'
+            +catBadge(cat)+'<b>'+n+'</b></div>';
+        }).join('');
+        return '<div class="card-row">'
+          +'<div class="cr-head"><span class="cr-mono">'+campo.nombre+'</span><b style="font-size:16px">'+cA.length+'</b></div>'
+          +'<div style="margin-top:6px">'+catRows+'</div>'
+          +'</div>';
+      }).join('');
+      byCampo='<div class="panel" style="margin-top:16px"><div class="panel-hdr"><h3>Distribución por campo</h3></div><div class="card-list">'+byCampoCards+'</div></div>';
+    } else {
+      byCampo='<div class="panel" style="margin-top:16px"><div class="panel-hdr"><h3>Distribución por campo</h3></div>'
+        +'<div class="tbl-wrap"><table class="exist-tbl"><thead><tr><th>Campo</th>'
+        +CAT_NAMES.map(function(c){return'<th style="font-size:9px">'+c+'</th>'}).join('')+'<th>Total</th></tr></thead><tbody>'
+        +camposConDatos.map(function(campo){
+          var cA=activos.filter(function(a){return a.campoId===campo.id});
+          return'<tr><td style="white-space:nowrap;font-weight:700">'+campo.nombre+'</td>'
+            +CAT_NAMES.map(function(cat){var n=cA.filter(function(a){return a.categoria===cat}).length;return'<td>'+(n||'—')+'</td>'}).join('')
+            +'<td><b>'+cA.length+'</b></td></tr>';
+        }).join('')+'</tbody></table></div></div>';
+    }
   }
   document.getElementById('content').innerHTML='<div class="panel"><div class="panel-hdr"><h3>Existencias por categoría</h3></div>'+campoSel+'<div style="padding:16px 18px">'+tbl+'</div></div>'+byCampo;
 }
@@ -2220,9 +2242,46 @@ function processAniFile(file){
       var sexo=(ci.sexo>-1?String(row[ci.sexo]||'').trim().toUpperCase():'');
       var catRaw=ci.cat>-1?String(row[ci.cat]||'').trim():'';
       var cat=resolveCategoria(catRaw); // acepta sigla (VC, T, TO...) o nombre completo
-      var raza=ci.raza>-1?String(row[ci.raza]||'').trim():''; // ya es sigla (HE, RA...), sin traducir
-      // Normalize raza separators: "AA - HE" or "AA – HE" → "AA x HE"
-      if(raza) raza=raza.replace(/\s*[-–—]\s*/g,' x ').replace(/\s+x\s+/g,' x ').trim();
+      var raza=ci.raza>-1?String(row[ci.raza]||'').trim():'';
+      // Split tolerante: reconoce "x"/"X" como separador SOLO si tiene espacio
+      // en al menos un lado (o está al inicio/fin del string), y guion con o
+      // sin espacios. Esto evita partir siglas inválidas que contienen una
+      // "x" interna sin espacios (ej: "xyz" no debe partirse por su "x").
+      // Caso real que motivó esto: "RA x" (falta la sigla de la madre) hacía
+      // que el split anterior (" x " exacto) no encontrara el patrón y
+      // devolviera el string completo sin partir, rompiendo el editor.
+      // Regla confirmada: una sigla = raza pura (padre=madre); dos siglas =
+      // padre (primera) y madre (segunda). No hay un tercer caso.
+      if(raza){
+        var segmentos = raza
+          .split(/\s+[xX]\s+|\s+[xX]$|^[xX]\s+|[\-–—]/)
+          .map(function(s){return s.trim();})
+          .filter(function(s){return s.length>0 && !/^[xX]$/.test(s);}); // descarta "x" sola (separador sin sigla real)
+        if(segmentos.length===1){
+          raza = segmentos[0]; // pura: se guarda sola, sin separador "x"
+        } else if(segmentos.length>=2){
+          raza = segmentos[0]+' x '+segmentos[1]; // cruza: ignora cualquier segmento extra mal formado
+        } else {
+          raza = ''; // separador sin ninguna sigla (ej: raza era solo "x")
+        }
+      }
+      // Las siglas se guardan siempre en mayúsculas (HE, RA...), pero el Excel
+      // puede traerlas en cualquier case ("he x ra", "He X Ra"). Sin este paso,
+      // razaDualWidget nunca matcheaba el <option value="HE"> contra "he" al
+      // editar, y ambos selectores quedaban vacíos aunque el badge en pantalla
+      // mostrara el texto crudo tal cual se guardó.
+      var razasValidas = getRazasList().map(function(r){return r.sigla;});
+      if(raza){
+        var siglasRaza = raza.split(' x ').map(function(s){return s.trim().toUpperCase();});
+        var siglasReconocidas = siglasRaza.filter(function(s){return razasValidas.indexOf(s)>-1;});
+        if(siglasReconocidas.length === siglasRaza.length){
+          // Todas las siglas matchean una raza válida: reconstruir en mayúsculas
+          raza = siglasRaza.join(' x ');
+        }
+        // Si alguna sigla no matchea ninguna raza conocida, se deja el texto
+        // original tal cual llegó (con su case original) — se marca como
+        // error más abajo en vez de forzar mayúsculas sobre un dato inválido.
+      }
       var campoNomRaw=ci.campo>-1?String(row[ci.campo]||'').trim():'';
       var peso=ci.peso>-1?String(row[ci.peso]||'').trim():'';
       var marcaImp=resolveMarca(ci.marca>-1?String(row[ci.marca]||'').trim():'');
@@ -2232,12 +2291,44 @@ function processAniFile(file){
       if(!car)errs.push('Sin caravana');
       if(sexo&&sexo!=='M'&&sexo!=='H')errs.push('Sexo inválido');
       if(cat&&CAT_NAMES.indexOf(cat)===-1)errs.push('Categoría inválida ("'+catRaw+'" no reconocida)');
+      if(raza){
+        var _siglasCheck = raza.split(' x ').map(function(s){return s.trim().toUpperCase();});
+        var _noReconocidas = _siglasCheck.filter(function(s){return razasValidas.indexOf(s)===-1;});
+        if(_noReconocidas.length) errs.push('Raza inválida ("'+raza+'": '+_noReconocidas.join(', ')+' no reconocida)');
+      }
       if(state.animales.find(function(a){return a.caravana===car}))errs.push('Caravana duplicada');
       // Se marca si la caravana fue autocompletada con ceros por normalizeCaravana,
       // para poder resaltarla en el paso de verificación (más riesgo de estar mal).
       var carOriginal = ci.car>-1?String(row[ci.car]||'').trim():'';
       var carAutocompletada = car && carOriginal && car.replace(/^UY/,'') !== carOriginal.replace(/[^0-9]/g,'').padStart(9,'_');
       _impAni.push({caravana:car,anioNac:anio,sexo:sexo||'H',categoria:cat,raza:raza,marca:marcaImp,campoId:campoRes.campoId,campoNom:campoRes.campoNom,peso:peso,obs:obs,_e:errs,_autocompletada:carAutocompletada});
+    });
+    // Duplicado INTRA-archivo: el forEach de arriba solo compara cada fila
+    // contra state.animales (lo que ya existe en la base). Dos filas del mismo
+    // Excel con la misma caravana pasaban ambas como válidas — ninguna de las
+    // dos existía todavía en state.animales al momento de su propia validación.
+    // Se marcan AMBAS filas del conflicto, no solo la segunda: no hay forma de
+    // saber cuál de las dos es la correcta sin que un humano decida.
+    var porCaravana = {};
+    _impAni.forEach(function(r, idx){
+      if(!r.caravana) return;
+      if(!porCaravana[r.caravana]) porCaravana[r.caravana] = [];
+      porCaravana[r.caravana].push(idx);
+    });
+    Object.keys(porCaravana).forEach(function(car){
+      var idxs = porCaravana[car];
+      if(idxs.length > 1){
+        // Número de fila real del Excel (1-indexed): hRow es el índice del
+        // encabezado (0-indexed) + 1 para la primera fila de datos + 1 para
+        // convertir a numeración humana. Sin sumar hRow acá, el mensaje
+        // apuntaría a la fila equivocada si el encabezado no está en la
+        // primera fila del archivo (puede pasar: se busca "caravana" en
+        // cualquier fila, no solo la primera).
+        var filasExcel = idxs.map(function(i){return i+hRow+2;});
+        idxs.forEach(function(idx){
+          _impAni[idx]._e.push('Duplicada dentro del archivo (fila '+filasExcel.join(', ')+' del Excel)');
+        });
+      }
     });
     var ok=_impAni.filter(function(r){return!r._e.length}).length;
     var bad=_impAni.length-ok;
@@ -2315,15 +2406,100 @@ function _impAniVerifUpdate(idx, campo, valor){
 function doImportAni(){
   // Usa la copia verificada/editada si existe (vino del paso de verificación);
   // si no, cae al comportamiento anterior por compatibilidad.
-  var fuente = window._impAniVerificados || _impAni.filter(function(r){return !r._e.length;});
-  var added=0;
-  fuente.forEach(function(r){
-    if(state.animales.find(function(a){return a.caravana===r.caravana}))return;
+  var fuenteValida = window._impAniVerificados || _impAni.filter(function(r){return !r._e.length;});
+  var conError = _impAni.filter(function(r){return r._e.length>0;}); // nunca llegaron a "fuente"
+  var importados = [];
+  var saltadosPorDuplicado = [];
+  fuenteValida.forEach(function(r){
+    // Esta comparación es contra state.animales, que se va modificando DENTRO
+    // de este mismo forEach (el push de abajo). Si dos filas de "fuente"
+    // comparten caravana entre sí (no debería pasar si la detección
+    // intra-archivo de processAniFile ya las marcó como error antes de este
+    // punto), la primera entra y la segunda se detecta acá como "ya existe".
+    var yaExiste = state.animales.find(function(a){return a.caravana===r.caravana});
+    if(yaExiste){
+      saltadosPorDuplicado.push(r);
+      return;
+    }
     state.animales.push({id:uid(),caravana:r.caravana,anioNac:r.anioNac,sexo:r.sexo,categoria:r.categoria,raza:r.raza,marca:r.marca||'',campoId:r.campoId,peso:r.peso,estado:'activo',obs:r.obs});
-    added++;
+    importados.push(r);
   });
   window._impAniVerificados = null; // limpiar para la próxima importación
-  save('animales');closeModal();renderAnimales();toast(added+' animales importados');
+  save('animales');renderAnimales();
+  renderReporteImportacionAni(importados, saltadosPorDuplicado, conError);
+}
+
+// Reporte persistente post-importación: antes de esto, el modal se cerraba
+// solo (closeModal()) y toda la evidencia de qué pasó vivía unos segundos en
+// un toast — sin ningún lugar para volver a revisarlo. Este reporte se queda
+// en pantalla hasta que el usuario lo cierra activamente, y separa las tres
+// categorías reales: importados con éxito, saltados por duplicado (existían
+// ya en la base), y descartados antes de llegar aquí por error de formato
+// (caravana inválida, categoría/raza no reconocida, duplicado intra-archivo).
+// Descarga el reporte de importación como Excel con 3 hojas separadas.
+// Reutiliza el mismo patrón que exportarReporte() en Existencias (XLSX ya
+// cargado globalmente, mismo builder aoa_to_sheet), en vez de introducir una
+// librería nueva para PDF que hoy no existe en ningún punto del sistema.
+function descargarReporteImportacionAni(importados, duplicados, conError){
+  var wb = XLSX.utils.book_new();
+  function hoja(nombre, filas, incluirMotivo){
+    var headers = incluirMotivo
+      ? ['Caravana','Categoría','Raza','Campo','Sexo','Peso','Motivo']
+      : ['Caravana','Categoría','Raza','Campo','Sexo','Peso'];
+    var data = [headers].concat(filas.map(function(r){
+      var fila = [r.caravana||'', r.categoria||'', r.raza||'', r.campoNom||'', r.sexo||'', r.peso||''];
+      if(incluirMotivo) fila.push(r._e&&r._e.length?r._e.join('; '):'Ya existía en la base');
+      return fila;
+    }));
+    var ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = incluirMotivo
+      ? [{wch:16},{wch:18},{wch:12},{wch:16},{wch:8},{wch:8},{wch:40}]
+      : [{wch:16},{wch:18},{wch:12},{wch:16},{wch:8},{wch:8}];
+    XLSX.utils.book_append_sheet(wb, ws, nombre);
+  }
+  // XLSX exige al menos una hoja; si alguna lista está vacía se igual se crea
+  // con encabezado solo, para que el archivo siempre tenga las 3 pestañas y
+  // el usuario no se pregunte por qué falta una.
+  hoja('Importados', importados, false);
+  hoja('Duplicados', duplicados, true);
+  hoja('Errores de formato', conError, true);
+  var fecha = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, 'reporte_importacion_animales_'+fecha+'.xlsx');
+}
+
+function renderReporteImportacionAni(importados, duplicados, conError){
+  // Se guarda en window para que el botón de descarga (fuera de este closure,
+  // disparado por onclick desde el HTML) pueda acceder a las listas sin
+  // depender de que la función siga "viva" — mismo patrón ya usado con
+  // window._impAniVerificados en la pantalla de verificación.
+  window._reporteImportacionAni = {importados:importados, duplicados:duplicados, conError:conError};
+  var total = importados.length + duplicados.length + conError.length;
+  var seccion = function(titulo, colorEstilo, filas, colBadgeTexto){
+    if(!filas.length) return '';
+    return '<div style="margin-top:14px">'
+      +'<div style="font-weight:700;font-size:13px;margin-bottom:6px;'+colorEstilo+'">'+titulo+' ('+filas.length+')</div>'
+      +'<div class="prev-wrap" style="max-height:200px;overflow-y:auto">'
+      +filas.map(function(r){
+        var motivo = r._e && r._e.length ? r._e.join('; ') : (colBadgeTexto||'');
+        return '<div class="prev-row"><span style="width:120px" class="mono">'+(r.caravana||'—')+'</span>'
+          +'<span style="width:140px">'+(r.categoria||'—')+'</span>'
+          +'<span style="color:var(--r600);font-size:11px">'+motivo+'</span></div>';
+      }).join('')
+      +'</div></div>';
+  };
+  var html = '<div class="modal-hdr"><h3>Resultado de la importación</h3><button class="close-x" onclick="closeModal()">&#215;</button></div>'
+    +'<div class="modal-body">'
+    +'<div class="alert '+(conError.length||duplicados.length?'alert-warn':'alert-ok')+'">'
+    +'<b>'+importados.length+'</b> de <b>'+total+'</b> registros importados correctamente'
+    +(duplicados.length?' · <b>'+duplicados.length+'</b> ya existían (duplicado)':'')
+    +(conError.length?' · <b>'+conError.length+'</b> con error de formato':'')
+    +'</div>'
+    +seccion('✓ Importados', 'color:var(--gm)', importados, 'Importado sin errores')
+    +seccion('⚠ No importados — ya existían en la base', 'color:var(--ad)', duplicados, 'Caravana ya registrada')
+    +seccion('✗ No importados — error de formato', 'color:var(--r600)', conError, '')
+    +'</div>'
+    +'<div class="modal-foot"><button class="btn btn-s" onclick="descargarReporteImportacionAni(window._reporteImportacionAni.importados, window._reporteImportacionAni.duplicados, window._reporteImportacionAni.conError)">&#8681; Descargar reporte (Excel)</button><button class="btn btn-p" onclick="closeModal()">Cerrar</button></div>';
+  document.getElementById('modal-box').innerHTML = html;
 }
 
 // ── ENTORE ────────────────────────────────────────────────────────────────────
