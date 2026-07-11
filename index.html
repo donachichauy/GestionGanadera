@@ -4507,14 +4507,35 @@ function renderReportes(){
   var razaOpts = '<option value="">Todas las razas</option>'
     +razasEnUso.map(function(r){return'<option value="'+r+'"'+(_repRaza===r?' selected':'')+'>'+r+'</option>';}).join('');
 
-  var filtersHtml='<div class="panel-body"><div class="filters">'
-    +'<div class="field"><label>Estado</label><select onchange="_repEstado=this.value;renderReportes()"><option value="">Todos</option>'+estadoOpts+'</select></div>'
-    +'<div class="field"><label>Categoría</label><select onchange="_repCat=this.value;renderReportes()"><option value="">Todas</option>'+CAT_NAMES.map(function(c){return'<option value="'+c+'"'+(_repCat===c?' selected':'')+'>'+c+'</option>';}).join('')+'</select></div>'
-    +'<div class="field"><label>Campo</label><select onchange="_repCampo=this.value;_repPotrero=\'\';renderReportes()">'+campoOpts+'</select></div>'
-    +'<div class="field"><label>Potrero</label>'+(_repCampo?'<select onchange="_repPotrero=this.value;renderReportes()"><option value="">Todos</option>'+potrerosOpts(_repCampo).map(function(p){return'<option value="'+p.v+'"'+(_repPotrero===p.v?' selected':'')+'>'+p.l+'</option>';}).join('')+'</select>':'<select disabled><option>Elija un campo</option></select>')+'</div>'
-    +'<div class="field"><label>Marca</label><select onchange="_repMarca=this.value;renderReportes()"><option value="">Todas</option>'+getMarcasList().map(function(m){return'<option value="'+m.iniciales+'"'+(_repMarca===m.iniciales?' selected':'')+'>'+m.nombre+'</option>';}).join('')+'</select></div>'
-    +'<div class="field"><label>Raza</label><select onchange="_repRaza=this.value;renderReportes()">'+razaOpts+'</select></div>'
-    +'</div></div>';
+  var filtroEstado='<div class="field"><label>Estado</label><select onchange="_repEstado=this.value;renderReportes()"><option value="">Todos</option>'+estadoOpts+'</select></div>';
+  var filtroCat='<div class="field"><label>Categoría</label><select onchange="_repCat=this.value;renderReportes()"><option value="">Todas</option>'+CAT_NAMES.map(function(c){return'<option value="'+c+'"'+(_repCat===c?' selected':'')+'>'+c+'</option>';}).join('')+'</select></div>';
+  var filtroCampo='<div class="field"><label>Campo</label><select onchange="_repCampo=this.value;_repPotrero=\'\';renderReportes()">'+campoOpts+'</select></div>';
+  var filtroPotrero='<div class="field"><label>Potrero</label>'+(_repCampo?'<select onchange="_repPotrero=this.value;renderReportes()"><option value="">Todos</option>'+potrerosOpts(_repCampo).map(function(p){return'<option value="'+p.v+'"'+(_repPotrero===p.v?' selected':'')+'>'+p.l+'</option>';}).join('')+'</select>':'<select disabled><option>Elija un campo</option></select>')+'</div>';
+  var filtroMarca='<div class="field"><label>Marca</label><select onchange="_repMarca=this.value;renderReportes()"><option value="">Todas</option>'+getMarcasList().map(function(m){return'<option value="'+m.iniciales+'"'+(_repMarca===m.iniciales?' selected':'')+'>'+m.nombre+'</option>';}).join('')+'</select></div>';
+  var filtroRaza='<div class="field"><label>Raza</label><select onchange="_repRaza=this.value;renderReportes()">'+razaOpts+'</select></div>';
+  var filtrosActivosExtra=[_repCampo,_repPotrero,_repMarca,_repRaza].filter(Boolean).length;
+  var filtersHtml;
+  if(isMobile()){
+    // En mobile, 6 selects en una sola fila (aunque cada .field tenga
+    // width:100% en su propio breakpoint) resultan ilegibles porque el
+    // panel completo compite por el mismo ancho estrecho a la vez. Se
+    // muestran los 2 filtros más usados siempre visibles, y el resto
+    // colapsado en un <details> nativo — sin JS adicional para el toggle,
+    // cada select ocupa su fila completa al expandir.
+    filtersHtml='<div class="panel-body"><div class="filters" style="flex-direction:column">'
+      +filtroEstado+filtroCat
+      +'<details style="margin-top:4px">'
+      +'<summary style="cursor:pointer;font-size:12.5px;color:var(--txt2);padding:6px 0;font-weight:600">'
+      +'Más filtros'+(filtrosActivosExtra?' ('+filtrosActivosExtra+' activo'+(filtrosActivosExtra!==1?'s':'')+')':'')
+      +'</summary>'
+      +'<div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">'
+      +filtroCampo+filtroPotrero+filtroMarca+filtroRaza
+      +'</div></details></div></div>';
+  } else {
+    filtersHtml='<div class="panel-body"><div class="filters">'
+      +filtroEstado+filtroCat+filtroCampo+filtroPotrero+filtroMarca+filtroRaza
+      +'</div></div>';
+  }
   var hdr='<div class="panel-hdr"><h3>Reporte de Animales <span style="font-weight:400;font-size:12px;color:var(--txt3)">'+lista.length+' registros</span></h3>'
     +'<div class="btns">'
     +'<button class="btn btn-s btn-sm" onclick="imprimirReporte()">🖨 Imprimir</button>'
