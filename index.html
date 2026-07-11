@@ -94,6 +94,7 @@ html,body{height:100%;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
 #sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--sidebar);
   flex-shrink:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   position:fixed;top:0;left:0;height:100vh;z-index:300;
+  padding-bottom:env(safe-area-inset-bottom,0px);
   transition:transform .25s ease}
 .logo{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
 .logo h1{font-size:16px;font-weight:700;color:#e4f0d4;letter-spacing:-.3px}
@@ -918,14 +919,6 @@ body.outdoor table th{background:#000;color:#fff}
 </div>
 <div id="toast"></div>
 <button id="fab" onclick="fabAction()" title="Acción rápida">+</button>
-<button id="outdoor-btn" onclick="toggleOutdoor()"
-  style="display:none;position:fixed;right:16px;bottom:calc(132px + env(safe-area-inset-bottom,0px));z-index:260;
-    width:50px;height:50px;border-radius:50%;background:var(--a400);
-    color:#fff;border:none;font-size:20px;cursor:pointer;
-    box-shadow:0 3px 12px rgba(0,0,0,.2);
-    transform:translateZ(0);-webkit-transform:translateZ(0);
-    will-change:transform;backface-visibility:hidden;align-items:center;justify-content:center"
-  title="Modo exterior (mayor contraste)">&#9728;</button>
 
 <script>
 // ── FIREBASE CONFIG & DATA LAYER ────────────────────────────────────────────
@@ -1751,7 +1744,18 @@ var PAGE_SUB={
 var curPage='dashboard';
 function renderNav(){
   var secs=[];PAGES.forEach(function(p){if(secs.indexOf(p.sec)===-1)secs.push(p.sec)});
-  var h='<div class="logo" style="padding:18px 14px 14px;text-align:center"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjAwIDIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8IS0tIEJhY2tncm91bmQgcm91bmRlZCBzcXVhcmUgLS0+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIHJ4PSIzOCIgZmlsbD0iI0VBRjNERSIvPgoKICA8IS0tIFN1YnRsZSBib3JkZXIgLS0+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIHJ4PSIzOCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjQzBERDk3IiBzdHJva2Utd2lkdGg9IjMiLz4KCiAgPCEtLSBBSSBuZXR3b3JrIGRvdHMgYXQgY29ybmVycyAtLT4KICA8Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSI1IiBmaWxsPSIjOTdDNDU5IiBvcGFjaXR5PSIwLjciLz4KICA8Y2lyY2xlIGN4PSIxNjgiIGN5PSIzMiIgcj0iNSIgZmlsbD0iIzk3QzQ1OSIgb3BhY2l0eT0iMC43Ii8+CiAgPGNpcmNsZSBjeD0iMzIiIGN5PSIxNjgiIHI9IjUiIGZpbGw9IiM5N0M0NTkiIG9wYWNpdHk9IjAuNyIvPgogIDxjaXJjbGUgY3g9IjE2OCIgY3k9IjE2OCIgcj0iNSIgZmlsbD0iIzk3QzQ1OSIgb3BhY2l0eT0iMC43Ii8+CiAgPCEtLSBDZW50ZXIgZG90IC0tPgogIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNCIgZmlsbD0iIzYzOTkyMiIvPgogIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iMiIgZmlsbD0iI0VBRjNERSIvPgoKICA8IS0tIENvcm5lciBjb25uZWN0b3IgbGluZXMgLS0+CiAgPGxpbmUgeDE9IjMyIiB5MT0iMzIiICB4Mj0iMTY4IiB5Mj0iMzIiICBzdHJva2U9IiNDMEREOTciIHN0cm9rZS13aWR0aD0iMS41IiBvcGFjaXR5PSIwLjUiLz4KICA8bGluZSB4MT0iMzIiIHkxPSIxNjgiIHgyPSIxNjgiIHkyPSIxNjgiIHN0cm9rZT0iI0MwREQ5NyIgc3Ryb2tlLXdpZHRoPSIxLjUiIG9wYWNpdHk9IjAuNSIvPgogIDxsaW5lIHgxPSIzMiIgeTE9IjMyIiAgeDI9IjMyIiAgeTI9IjE2OCIgc3Ryb2tlPSIjQzBERDk3IiBzdHJva2Utd2lkdGg9IjEuNSIgb3BhY2l0eT0iMC40Ii8+CiAgPGxpbmUgeDE9IjE2OCIgeTE9IjMyIiB4Mj0iMTY4IiB5Mj0iMTY4IiBzdHJva2U9IiNDMEREOTciIHN0cm9rZS13aWR0aD0iMS41IiBvcGFjaXR5PSIwLjQiLz4KICA8IS0tIERpYWdvbmFscyB0byBjZW50ZXIgLS0+CiAgPGxpbmUgeDE9IjMyIiAgeTE9IjMyIiAgeDI9IjEwMCIgeTI9IjEwMCIgc3Ryb2tlPSIjQzBERDk3IiBzdHJva2Utd2lkdGg9IjEiIG9wYWNpdHk9IjAuMjUiLz4KICA8bGluZSB4MT0iMTY4IiB5MT0iMzIiICB4Mj0iMTAwIiB5Mj0iMTAwIiBzdHJva2U9IiNDMEREOTciIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iMC4yNSIvPgogIDxsaW5lIHgxPSIzMiIgIHkxPSIxNjgiIHgyPSIxMDAiIHkyPSIxMDAiIHN0cm9rZT0iI0MwREQ5NyIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjI1Ii8+CiAgPGxpbmUgeDE9IjE2OCIgeTE9IjE2OCIgeDI9IjEwMCIgeTI9IjEwMCIgc3Ryb2tlPSIjQzBERDk3IiBzdHJva2Utd2lkdGg9IjEiIG9wYWNpdHk9IjAuMjUiLz4KCiAgPCEtLSBGaXJzdCBHIOKAlCBkYXJrIGdyZWVuLCBkb21pbmFudCAtLT4KICA8dGV4dCB4PSIyNCIgeT0iMTQ4IgogICAgZm9udC1mYW1pbHk9IkFyaWFsIEJsYWNrLCBBcmlhbCwgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTE4IgogICAgZm9udC13ZWlnaHQ9IjkwMCIKICAgIGZpbGw9IiMyNzUwMEEiPkc8L3RleHQ+CgogIDwhLS0gU2Vjb25kIEcg4oCUIG1lZGl1bSBncmVlbiwgb2Zmc2V0IHJpZ2h0IGFuZCBzbGlnaHRseSBkb3duIC0tPgogIDx0ZXh0IHg9Ijg2IiB5PSIxNjIiCiAgICBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEFyaWFsLCBzYW5zLXNlcmlmIgogICAgZm9udC1zaXplPSI5MCIKICAgIGZvbnQtd2VpZ2h0PSI5MDAiCiAgICBmaWxsPSIjM0I2RDExIgogICAgb3BhY2l0eT0iMC43OCI+RzwvdGV4dD4KPC9zdmc+" style="width:180px;height:180px;display:block;margin:0 auto 10px;border-radius:28px"><div style="font-size:13.5px;font-weight:700;color:#e4f0d4;letter-spacing:-.2px">GanaderíaApp</div><div style="font-size:8.5px;font-weight:600;color:rgba(200,220,180,.45);letter-spacing:2px;text-transform:uppercase;margin-top:3px">Gestión Ganadera · IA</div></div><div style="font-size:8.5px;font-weight:600;color:rgba(200,220,180,.45);letter-spacing:2px;text-transform:uppercase;margin-top:2px">Gestión Ganadera · IA</div></div>';
+  var h='<div class="logo" style="padding:18px 14px 14px;text-align:center"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjAwIDIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8IS0tIEJhY2tncm91bmQgcm91bmRlZCBzcXVhcmUgLS0+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIHJ4PSIzOCIgZmlsbD0iI0VBRjNERSIvPgoKICA8IS0tIFN1YnRsZSBib3JkZXIgLS0+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIHJ4PSIzOCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjQzBERDk3IiBzdHJva2Utd2lkdGg9IjMiLz4KCiAgPCEtLSBBSSBuZXR3b3JrIGRvdHMgYXQgY29ybmVycyAtLT4KICA8Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSI1IiBmaWxsPSIjOTdDNDU5IiBvcGFjaXR5PSIwLjciLz4KICA8Y2lyY2xlIGN4PSIxNjgiIGN5PSIzMiIgcj0iNSIgZmlsbD0iIzk3QzQ1OSIgb3BhY2l0eT0iMC43Ii8+CiAgPGNpcmNsZSBjeD0iMzIiIGN5PSIxNjgiIHI9IjUiIGZpbGw9IiM5N0M0NTkiIG9wYWNpdHk9IjAuNyIvPgogIDxjaXJjbGUgY3g9IjE2OCIgY3k9IjE2OCIgcj0iNSIgZmlsbD0iIzk3QzQ1OSIgb3BhY2l0eT0iMC43Ii8+CiAgPCEtLSBDZW50ZXIgZG90IC0tPgogIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNCIgZmlsbD0iIzYzOTkyMiIvPgogIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iMiIgZmlsbD0iI0VBRjNERSIvPgoKICA8IS0tIENvcm5lciBjb25uZWN0b3IgbGluZXMgLS0+CiAgPGxpbmUgeDE9IjMyIiB5MT0iMzIiICB4Mj0iMTY4IiB5Mj0iMzIiICBzdHJva2U9IiNDMEREOTciIHN0cm9rZS13aWR0aD0iMS41IiBvcGFjaXR5PSIwLjUiLz4KICA8bGluZSB4MT0iMzIiIHkxPSIxNjgiIHgyPSIxNjgiIHkyPSIxNjgiIHN0cm9rZT0iI0MwREQ5NyIgc3Ryb2tlLXdpZHRoPSIxLjUiIG9wYWNpdHk9IjAuNSIvPgogIDxsaW5lIHgxPSIzMiIgeTE9IjMyIiAgeDI9IjMyIiAgeTI9IjE2OCIgc3Ryb2tlPSIjQzBERDk3IiBzdHJva2Utd2lkdGg9IjEuNSIgb3BhY2l0eT0iMC40Ii8+CiAgPGxpbmUgeDE9IjE2OCIgeTE9IjMyIiB4Mj0iMTY4IiB5Mj0iMTY4IiBzdHJva2U9IiNDMEREOTciIHN0cm9rZS13aWR0aD0iMS41IiBvcGFjaXR5PSIwLjQiLz4KICA8IS0tIERpYWdvbmFscyB0byBjZW50ZXIgLS0+CiAgPGxpbmUgeDE9IjMyIiAgeTE9IjMyIiAgeDI9IjEwMCIgeTI9IjEwMCIgc3Ryb2tlPSIjQzBERDk3IiBzdHJva2Utd2lkdGg9IjEiIG9wYWNpdHk9IjAuMjUiLz4KICA8bGluZSB4MT0iMTY4IiB5MT0iMzIiICB4Mj0iMTAwIiB5Mj0iMTAwIiBzdHJva2U9IiNDMEREOTciIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iMC4yNSIvPgogIDxsaW5lIHgxPSIzMiIgIHkxPSIxNjgiIHgyPSIxMDAiIHkyPSIxMDAiIHN0cm9rZT0iI0MwREQ5NyIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjI1Ii8+CiAgPGxpbmUgeDE9IjE2OCIgeTE9IjE2OCIgeDI9IjEwMCIgeTI9IjEwMCIgc3Ryb2tlPSIjQzBERDk3IiBzdHJva2Utd2lkdGg9IjEiIG9wYWNpdHk9IjAuMjUiLz4KCiAgPCEtLSBGaXJzdCBHIOKAlCBkYXJrIGdyZWVuLCBkb21pbmFudCAtLT4KICA8dGV4dCB4PSIyNCIgeT0iMTQ4IgogICAgZm9udC1mYW1pbHk9IkFyaWFsIEJsYWNrLCBBcmlhbCwgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTE4IgogICAgZm9udC13ZWlnaHQ9IjkwMCIKICAgIGZpbGw9IiMyNzUwMEEiPkc8L3RleHQ+CgogIDwhLS0gU2Vjb25kIEcg4oCUIG1lZGl1bSBncmVlbiwgb2Zmc2V0IHJpZ2h0IGFuZCBzbGlnaHRseSBkb3duIC0tPgogIDx0ZXh0IHg9Ijg2IiB5PSIxNjIiCiAgICBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEFyaWFsLCBzYW5zLXNlcmlmIgogICAgZm9udC1zaXplPSI5MCIKICAgIGZvbnQtd2VpZ2h0PSI5MDAiCiAgICBmaWxsPSIjM0I2RDExIgogICAgb3BhY2l0eT0iMC43OCI+RzwvdGV4dD4KPC9zdmc+" style="width:180px;height:180px;display:block;margin:0 auto 10px;border-radius:28px"><div style="font-size:13.5px;font-weight:700;color:#e4f0d4;letter-spacing:-.2px">GanaderíaApp</div><div style="font-size:8.5px;font-weight:600;color:rgba(200,220,180,.45);letter-spacing:2px;text-transform:uppercase;margin-top:3px">Gestión Ganadera · IA</div></div>'
+    // Checkbox de contraste dentro del menú, no flotante sobre el contenido.
+    // Antes era un botón circular fijo en la esquina inferior derecha que
+    // tapaba datos al hacer scroll (ver captura real) — acá solo ocupa
+    // espacio cuando el usuario abre el menú a propósito, sin competir con
+    // ninguna pantalla de contenido en ningún momento.
+    +'<label style="display:flex;align-items:center;gap:8px;padding:10px 16px;margin:4px 10px;'
+    +'border-radius:8px;background:rgba(255,255,255,.06);cursor:pointer;font-size:12.5px;color:#e4f0d4">'
+    +'<input type="checkbox" id="outdoor-chk" onchange="toggleOutdoor()" '
+    +(document.body.classList.contains('outdoor')?'checked ':'')
+    +'style="width:16px;height:16px;cursor:pointer;accent-color:var(--g600)">'
+    +'☀ Modo exterior (mayor contraste)</label>';
   secs.forEach(function(s){
     h+='<div class="nav-sec"><div class="nav-sec-lbl">'+s+'</div>';
     PAGES.filter(function(p){return p.sec===s}).forEach(function(p){
@@ -1762,7 +1766,7 @@ function renderNav(){
   // #sidebar no usa flexbox, así que esta etiqueta queda al final del flujo
   // normal del menú (después del último ítem), no anclada al fondo visual
   // del contenedor — eso requeriría cambiar el layout del sidebar entero.
-  h+='<div style="padding:14px;text-align:center;'
+  h+='<div style="padding:14px 14px 24px;text-align:center;'
     +'font-size:9.5px;color:rgba(200,220,180,.35);letter-spacing:.3px;'
     +'border-top:1px solid rgba(255,255,255,.06);margin-top:8px">'
     +'GanaderíaApp v'+APP_VERSION+' &middot; '+APP_BUILD_DATE+'</div>';
@@ -3789,16 +3793,13 @@ function fabAction(){
 }
 function updateFab(){
   var fab  = document.getElementById('fab');
-  var obtn = document.getElementById('outdoor-btn');
   if(!fab) return;
   fab.style.display = (isMobile() && FAB_ACTIONS[curPage]) ? 'flex' : 'none';
-  if(obtn) obtn.style.display = isMobile() ? 'flex' : 'none';
 }
 function toggleOutdoor(){
   document.body.classList.toggle('outdoor');
-  var btn = document.getElementById('outdoor-btn');
-  if(btn) btn.style.background = document.body.classList.contains('outdoor')
-    ? 'var(--g600)' : 'var(--a400)';
+  var chk = document.getElementById('outdoor-chk');
+  if(chk) chk.checked = document.body.classList.contains('outdoor');
 }
 
 // ── PARICIONES (Resultado de Entore) ──────────────────────────────────────────
@@ -5583,7 +5584,6 @@ document.getElementById('user-pill').style.opacity = '0.3';
   function clampFixed(){
     var bn=document.getElementById('bottom-nav');
     var fab=document.getElementById('fab');
-    var obn=document.getElementById('outdoor-btn');
     // Force repaint to re-anchor fixed elements
     if(bn){bn.style.display='none';void bn.offsetHeight;bn.style.display='';}
   }
@@ -5598,12 +5598,10 @@ document.getElementById('user-pill').style.opacity = '0.3';
     function fixOnZoom(){
       var bn=document.getElementById('bottom-nav');
       var fab=document.getElementById('fab');
-      var obn=document.getElementById('outdoor-btn');
       var vv=window.visualViewport;
       var offsetY=window.innerHeight-vv.height-vv.offsetTop;
       if(bn) bn.style.bottom=(offsetY+Math.max(0,window.innerHeight-vv.height-vv.offsetTop)+'px');
       if(fab) fab.style.bottom=(72+offsetY)+'px';
-      if(obn) obn.style.bottom=(132+offsetY)+'px';
     }
     window.visualViewport.addEventListener('resize',fixOnZoom,{passive:true});
     window.visualViewport.addEventListener('scroll',fixOnZoom,{passive:true});
