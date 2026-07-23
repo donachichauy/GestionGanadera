@@ -1997,7 +1997,73 @@ function renderExistencias(){
         }).join('')+'</tbody></table></div></div>';
     }
   }
-  document.getElementById('content').innerHTML='<div class="panel"><div class="panel-hdr"><h3>Existencias por categoría</h3></div>'+campoSel+chartHtml+'<div style="padding:16px 18px">'+tbl+'</div></div>'+byCampo;
+  // ── RESUMEN POR SEXO ─────────────────────────────────────────────────────
+  // Se agrupa sobre "lista" (ya filtrada por _exCampo si corresponde), así
+  // que este recuadro se actualiza solo al cambiar el filtro de campo, sin
+  // necesitar lógica de sincronización adicional.
+  var porSexo={};
+  lista.forEach(function(a){var s=a.sexo||'—';porSexo[s]=(porSexo[s]||0)+1;});
+  var sexoLabels={'M':'Macho','H':'Hembra','—':'Sin dato'};
+  var sexoKeys=Object.keys(porSexo).sort(function(a,b){return porSexo[b]-porSexo[a];});
+  var resumenSexo='';
+  if(sexoKeys.length){
+    if(isMobile()){
+      resumenSexo='<div class="panel" style="margin-top:16px"><div class="panel-hdr"><h3>Resumen por sexo</h3></div><div class="card-list">'
+        +sexoKeys.map(function(s){
+          var n=porSexo[s];var pct=total>0?(n/total*100).toFixed(1):'0.0';
+          return '<div class="card-row" style="display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:12px 14px">'
+            +'<span>'+(sexoLabels[s]||s)+'</span>'
+            +'<span style="display:flex;align-items:center;gap:10px"><b style="font-size:16px">'+n+'</b>'
+            +'<span style="font-size:12px;color:var(--txt3);min-width:44px;text-align:right">'+pct+'%</span></span></div>';
+        }).join('')
+        +'<div class="card-row" style="display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--g50);font-weight:800">'
+        +'<span>TOTAL</span><span>'+total+' · 100%</span></div>'
+        +'</div></div>';
+    } else {
+      resumenSexo='<div class="panel" style="margin-top:16px"><div class="panel-hdr"><h3>Resumen por sexo</h3></div>'
+        +'<div class="tbl-wrap"><table class="exist-tbl"><thead><tr><th>Sexo</th><th>Cantidad</th><th>%</th></tr></thead><tbody>'
+        +sexoKeys.map(function(s){
+          var n=porSexo[s];var pct=total>0?(n/total*100).toFixed(1):'0.0';
+          return '<tr><td>'+(sexoLabels[s]||s)+'</td><td style="font-weight:700">'+n+'</td><td>'+pct+'%</td></tr>';
+        }).join('')
+        +'<tr class="total-row"><td>TOTAL</td><td>'+total+'</td><td>100%</td></tr></tbody></table></div></div>';
+    }
+  }
+
+  // ── RESUMEN POR RAZA ─────────────────────────────────────────────────────
+  // Se agrupa por el valor completo de "raza" tal como está guardado (ej.
+  // "HE" o "HE x RA" son dos filas distintas, sin descomponer la cruza en
+  // sus dos siglas) — así la suma de la columna Cantidad siempre coincide
+  // con el total, sin doble conteo de un mismo animal en dos filas.
+  var porRaza={};
+  lista.forEach(function(a){var r=a.raza||'Sin dato';porRaza[r]=(porRaza[r]||0)+1;});
+  var razaKeys=Object.keys(porRaza).sort(function(a,b){return porRaza[b]-porRaza[a];});
+  var resumenRaza='';
+  if(razaKeys.length){
+    if(isMobile()){
+      resumenRaza='<div class="panel" style="margin-top:16px"><div class="panel-hdr"><h3>Resumen por raza</h3></div><div class="card-list">'
+        +razaKeys.map(function(r){
+          var n=porRaza[r];var pct=total>0?(n/total*100).toFixed(1):'0.0';
+          return '<div class="card-row" style="display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:12px 14px">'
+            +'<span>'+r+'</span>'
+            +'<span style="display:flex;align-items:center;gap:10px"><b style="font-size:16px">'+n+'</b>'
+            +'<span style="font-size:12px;color:var(--txt3);min-width:44px;text-align:right">'+pct+'%</span></span></div>';
+        }).join('')
+        +'<div class="card-row" style="display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--g50);font-weight:800">'
+        +'<span>TOTAL</span><span>'+total+' · 100%</span></div>'
+        +'</div></div>';
+    } else {
+      resumenRaza='<div class="panel" style="margin-top:16px"><div class="panel-hdr"><h3>Resumen por raza</h3></div>'
+        +'<div class="tbl-wrap"><table class="exist-tbl"><thead><tr><th>Raza</th><th>Cantidad</th><th>%</th></tr></thead><tbody>'
+        +razaKeys.map(function(r){
+          var n=porRaza[r];var pct=total>0?(n/total*100).toFixed(1):'0.0';
+          return '<tr><td>'+r+'</td><td style="font-weight:700">'+n+'</td><td>'+pct+'%</td></tr>';
+        }).join('')
+        +'<tr class="total-row"><td>TOTAL</td><td>'+total+'</td><td>100%</td></tr></tbody></table></div></div>';
+    }
+  }
+
+  document.getElementById('content').innerHTML='<div class="panel"><div class="panel-hdr"><h3>Existencias por categoría</h3></div>'+campoSel+chartHtml+'<div style="padding:16px 18px">'+tbl+'</div></div>'+byCampo+resumenSexo+resumenRaza;
   setTimeout(function(){
     var canvasEl=document.getElementById('existChartCanvas');
     if(!canvasEl||typeof Chart==='undefined')return;
