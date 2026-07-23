@@ -2556,7 +2556,7 @@ function showImportAnimalesModal(){
   _impAni=[];
   openModal('<div class="modal-hdr"><h3>Importar animales desde Excel</h3><button class="close-x" onclick="closeModal()">&#215;</button></div>'
     +'<div class="modal-body">'
-    +'<div class="alert alert-info">Columnas requeridas: <b>Nº Caravana, Año de Nacimiento, Sexo (M/H), Categoría, Raza, Campo, Marca, Peso (kg), Observaciones</b>. La fecha de nacimiento va en <b>una sola columna</b> con formato <b>mm/aa</b> o <b>mm/aaaa</b> (ej: 04/23 o 04/2023).</div>'
+    +'<div class="alert alert-info">Columnas requeridas: <b>Nº Caravana, Fecha de Nacimiento, Sexo (M/H), Categoría, Raza, Campo, Marca, Peso (kg), Observaciones</b>. La fecha de nacimiento va en <b>una sola columna</b> con formato <b>mm/aa</b> o <b>mm/aaaa</b> (ej: 04/23 o 04/2023).</div>'
     +'<div style="margin-bottom:12px"><a href="#" onclick="descargarPlantillaAnimales();return false" class="btn btn-xls btn-sm">&#8681; Descargar plantilla</a></div>'
     +'<div class="drop-zone" id="dz-ani" onclick="document.getElementById(\'fi-ani\').click()" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="handleDropAni(event)">'
     +'<div class="ico">&#128196;</div><h4>Clic o arrastre el archivo Excel</h4><p>.xlsx · .xls · .csv</p>'
@@ -2582,7 +2582,7 @@ function showImportActualizarAnimalesModal(){
   _impActAni=[];
   openModal('<div class="modal-hdr"><h3>Actualizar animales por lote</h3><button class="close-x" onclick="closeModal()">&#215;</button></div>'
     +'<div class="modal-body">'
-    +'<div class="alert alert-info">La caravana debe existir. Solo se actualizan los campos que traiga la planilla — una celda vacía <b>no borra</b> el dato existente, lo deja como está. Columnas reconocidas: <b>Nº Caravana (obligatoria), Año de Nacimiento, Sexo, Categoría, Raza, Campo, Marca, Peso, Observaciones</b> — incluí solo las que quieras actualizar. En Observaciones, el texto se <b>agrega</b> a lo ya escrito, no lo reemplaza. La fecha de nacimiento va en <b>una sola columna</b> con formato <b>mm/aa</b> o <b>mm/aaaa</b> (ej: 04/23 o 04/2023) — no hay columnas separadas de mes y año.</div>'
+    +'<div class="alert alert-info">La caravana debe existir. Solo se actualizan los campos que traiga la planilla — una celda vacía <b>no borra</b> el dato existente, lo deja como está. Columnas reconocidas: <b>Nº Caravana (obligatoria), Fecha de Nacimiento, Sexo, Categoría, Raza, Campo, Marca, Peso, Observaciones</b> — incluí solo las que quieras actualizar. En Observaciones, el texto se <b>agrega</b> a lo ya escrito, no lo reemplaza. La fecha de nacimiento va en <b>una sola columna</b> con formato <b>mm/aa</b> o <b>mm/aaaa</b> (ej: 04/23 o 04/2023) — permite actualizar mes y año juntos, no hay columnas separadas.</div>'
     +'<div style="margin-bottom:12px"><a href="#" onclick="descargarPlantillaAnimales();return false" class="btn btn-xls btn-sm">&#8681; Descargar plantilla</a> <small style="color:var(--txt3)">— es la misma plantilla que la de alta; dejá vacías las columnas que no quieras tocar</small></div>'
     +'<div class="drop-zone" id="dz-actani" onclick="document.getElementById(\'fi-actani\').click()" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="handleDropActAni(event)">'
     +'<div class="ico">&#128196;</div><h4>Clic o arrastre el archivo Excel</h4><p>.xlsx · .xls · .csv</p>'
@@ -2601,7 +2601,7 @@ function processActAniFile(file){
     for(var i=0;i<rows.length;i++){var r=rows[i];for(var j=0;j<r.length;j++){if(String(r[j]||'').toLowerCase().indexOf('caravana')>-1){hRow=i;break}}if(hRow>-1)break}
     if(hRow===-1){document.getElementById('imp-actani-result').innerHTML='<div class="alert alert-err">No se encontró columna "Caravana".</div>';return}
     var hdrs=rows[hRow].map(function(h){return String(h||'').trim().toLowerCase()});
-    var ci={car:findCol(hdrs,['caravana','n° caravana','numero caravana','num caravana']),anio:findCol(hdrs,['año de nacimiento','año nacimiento','año nac','anio','año nac.','ano nac','año']),
+    var ci={car:findCol(hdrs,['caravana','n° caravana','numero caravana','num caravana']),anio:findCol(hdrs,['fecha de nacimiento','fecha nac','año de nacimiento','año nacimiento','año nac','anio','año nac.','ano nac','año']),
       sexo:findCol(hdrs,['sexo']),cat:findCol(hdrs,['categoría','categoria']),raza:findCol(hdrs,['raza']),
       campo:findCol(hdrs,['campo','campo asignado']),peso:findCol(hdrs,['peso','peso (kg)','peso kg']),marca:findCol(hdrs,['marca']),obs:findCol(hdrs,['observaciones','obs'])};
     var razasValidas=getRazasList().map(function(r){return r.sigla;});
@@ -2806,7 +2806,7 @@ function processAniFile(file){
     for(var i=0;i<rows.length;i++){var r=rows[i];for(var j=0;j<r.length;j++){if(String(r[j]||'').toLowerCase().indexOf('caravana')>-1){hRow=i;break}}if(hRow>-1)break}
     if(hRow===-1){document.getElementById('imp-ani-result').innerHTML='<div class="alert alert-err">No se encontró columna "Caravana".</div>';return}
     var hdrs=rows[hRow].map(function(h){return String(h||'').trim().toLowerCase()});
-    var ci={car:findCol(hdrs,['caravana','n° caravana','numero caravana','num caravana']),anio:findCol(hdrs,['año de nacimiento','año nacimiento','año nac','anio','año nac.','ano nac','año']),
+    var ci={car:findCol(hdrs,['caravana','n° caravana','numero caravana','num caravana']),anio:findCol(hdrs,['fecha de nacimiento','fecha nac','año de nacimiento','año nacimiento','año nac','anio','año nac.','ano nac','año']),
       sexo:findCol(hdrs,['sexo']),cat:findCol(hdrs,['categoría','categoria']),raza:findCol(hdrs,['raza']),
       campo:findCol(hdrs,['campo','campo asignado']),peso:findCol(hdrs,['peso','peso (kg)','peso kg']),marca:findCol(hdrs,['marca']),obs:findCol(hdrs,['observaciones','obs'])};
     _impAni=[];
@@ -5535,10 +5535,10 @@ function doImportMan(){
 function descargarPlantillaAnimales(){
   var wb=XLSX.utils.book_new();
   var ws=XLSX.utils.aoa_to_sheet([
-    ['Nº Caravana','Año de Nacimiento','Sexo (M/H)','Categoría','Raza','Campo','Marca','Peso (kg)','Observaciones'],
-    ['UY00000 0000','2023-04','H','Vaquillona 1-2','HE','','JC','180',''],
+    ['Nº Caravana','Fecha de Nacimiento (mm/aa)','Sexo (M/H)','Categoría','Raza','Campo','Marca','Peso (kg)','Observaciones'],
+    ['UY00000 0000','04/23','H','Vaquillona 1-2','HE','','JC','180',''],
   ]);
-  ws['!cols']=[{wch:18},{wch:16},{wch:10},{wch:16},{wch:10},{wch:14},{wch:8},{wch:10},{wch:22}];
+  ws['!cols']=[{wch:18},{wch:22},{wch:10},{wch:16},{wch:10},{wch:14},{wch:8},{wch:10},{wch:22}];
   XLSX.utils.book_append_sheet(wb,ws,'Animales');
   XLSX.writeFile(wb,'plantilla_animales.xlsx');
 }
