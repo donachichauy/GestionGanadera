@@ -2362,7 +2362,7 @@ function renderAnimales(){
     return;
   }
 
-  document.getElementById('content').innerHTML='<div class="panel"><div class="panel-hdr"><h3>Rodeo</h3><div class="btns"><button class="btn btn-xls btn-sm" onclick="showImportAnimalesModal()">&#8679; Importar Excel</button><button class="btn btn-p btn-sm" onclick="newAnimal()">+ Nuevo</button></div></div>'
+  document.getElementById('content').innerHTML='<div class="panel"><div class="panel-hdr"><h3>Rodeo</h3><div class="btns"><button class="btn btn-xls btn-sm" onclick="showImportAnimalesModal()">&#8679; Importar Excel</button><button class="btn btn-s btn-sm" onclick="showImportActualizarAnimalesModal()">✎ Actualizar por lote</button><button class="btn btn-p btn-sm" onclick="newAnimal()">+ Nuevo</button></div></div>'
     +'<div class="panel-body" style="padding-bottom:4px"><div class="filters">'
     +'<div class="field"><label>Buscar</label><input id="ani-search-d" value="'+aniSearch+'" oninput="aniSearch=this.value;conFocoPreservado(renderAnimales)" placeholder="Caravana..."></div>'
     +'<div class="field"><label>Categoría</label><select onchange="aniCat=this.value;renderAnimales()"><option value="">Todas</option>'+CAT_NAMES.map(function(c){return'<option'+(aniCat===c?' selected':'')+'>'+c+'</option>'}).join('')+'</select></div>'
@@ -2556,7 +2556,7 @@ function showImportAnimalesModal(){
   _impAni=[];
   openModal('<div class="modal-hdr"><h3>Importar animales desde Excel</h3><button class="close-x" onclick="closeModal()">&#215;</button></div>'
     +'<div class="modal-body">'
-    +'<div class="alert alert-info">Columnas requeridas: <b>Nº Caravana, Año de Nacimiento, Sexo (M/H), Categoría, Raza, Campo, Marca, Peso (kg), Observaciones</b></div>'
+    +'<div class="alert alert-info">Columnas requeridas: <b>Nº Caravana, Año de Nacimiento, Sexo (M/H), Categoría, Raza, Campo, Marca, Peso (kg), Observaciones</b>. La fecha de nacimiento va en <b>una sola columna</b> con formato <b>mm/aa</b> o <b>mm/aaaa</b> (ej: 04/23 o 04/2023).</div>'
     +'<div style="margin-bottom:12px"><a href="#" onclick="descargarPlantillaAnimales();return false" class="btn btn-xls btn-sm">&#8681; Descargar plantilla</a></div>'
     +'<div class="drop-zone" id="dz-ani" onclick="document.getElementById(\'fi-ani\').click()" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="handleDropAni(event)">'
     +'<div class="ico">&#128196;</div><h4>Clic o arrastre el archivo Excel</h4><p>.xlsx · .xls · .csv</p>'
@@ -2567,6 +2567,237 @@ function showImportAnimalesModal(){
     +'<div class="modal-foot"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="btn-imp-ani" style="display:none" onclick="renderVerificacionAni()">Verificar e importar</button></div>','w800');
 }
 function handleDropAni(ev){ev.preventDefault();document.getElementById('dz-ani').classList.remove('drag');processAniFile(ev.dataTransfer.files[0])}
+
+// ── ACTUALIZACIÓN MASIVA DE ANIMALES (distinto de alta) ─────────────────────
+// A diferencia de processAniFile/doImportAni (que crean animales nuevos y
+// descartan cualquier caravana ya existente como "duplicado"), este flujo
+// hace lo inverso: exige que la caravana YA exista, y solo actualiza los
+// campos que vienen con dato en la planilla — una celda vacía significa
+// "no tocar este campo", nunca "borrarlo". No reutiliza processAniFile
+// porque esa función fuerza sexo:'H' por defecto cuando la columna no
+// viene, lo cual sobrescribiría el sexo real de cada animal a Hembra si
+// se reutilizara tal cual para este caso.
+var _impActAni=[];
+function showImportActualizarAnimalesModal(){
+  _impActAni=[];
+  openModal('<div class="modal-hdr"><h3>Actualizar animales por lote</h3><button class="close-x" onclick="closeModal()">&#215;</button></div>'
+    +'<div class="modal-body">'
+    +'<div class="alert alert-info">La caravana debe existir. Solo se actualizan los campos que traiga la planilla — una celda vacía <b>no borra</b> el dato existente, lo deja como está. Columnas reconocidas: <b>Nº Caravana (obligatoria), Año de Nacimiento, Sexo, Categoría, Raza, Campo, Marca, Peso, Observaciones</b> — incluí solo las que quieras actualizar. En Observaciones, el texto se <b>agrega</b> a lo ya escrito, no lo reemplaza. La fecha de nacimiento va en <b>una sola columna</b> con formato <b>mm/aa</b> o <b>mm/aaaa</b> (ej: 04/23 o 04/2023) — no hay columnas separadas de mes y año.</div>'
+    +'<div style="margin-bottom:12px"><a href="#" onclick="descargarPlantillaAnimales();return false" class="btn btn-xls btn-sm">&#8681; Descargar plantilla</a> <small style="color:var(--txt3)">— es la misma plantilla que la de alta; dejá vacías las columnas que no quieras tocar</small></div>'
+    +'<div class="drop-zone" id="dz-actani" onclick="document.getElementById(\'fi-actani\').click()" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="handleDropActAni(event)">'
+    +'<div class="ico">&#128196;</div><h4>Clic o arrastre el archivo Excel</h4><p>.xlsx · .xls · .csv</p>'
+    +'</div>'
+    +'<input type="file" id="fi-actani" accept=".xlsx,.xls,.csv" style="display:none" onchange="processActAniFile(this.files[0])">'
+    +'<div id="imp-actani-result"></div>'
+    +'</div>'
+    +'<div class="modal-foot"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="btn-imp-actani" style="display:none" onclick="renderVerificacionActAni()">Verificar y actualizar</button></div>','w800');
+}
+function handleDropActAni(ev){ev.preventDefault();document.getElementById('dz-actani').classList.remove('drag');processActAniFile(ev.dataTransfer.files[0])}
+function processActAniFile(file){
+  if(!file)return;
+  parseXLSX(file,function(err,rows){
+    if(err){document.getElementById('imp-actani-result').innerHTML='<div class="alert alert-err">Error al leer archivo: '+err.message+'</div>';return}
+    var hRow=-1;
+    for(var i=0;i<rows.length;i++){var r=rows[i];for(var j=0;j<r.length;j++){if(String(r[j]||'').toLowerCase().indexOf('caravana')>-1){hRow=i;break}}if(hRow>-1)break}
+    if(hRow===-1){document.getElementById('imp-actani-result').innerHTML='<div class="alert alert-err">No se encontró columna "Caravana".</div>';return}
+    var hdrs=rows[hRow].map(function(h){return String(h||'').trim().toLowerCase()});
+    var ci={car:findCol(hdrs,['caravana','n° caravana','numero caravana','num caravana']),anio:findCol(hdrs,['año de nacimiento','año nacimiento','año nac','anio','año nac.','ano nac','año']),
+      sexo:findCol(hdrs,['sexo']),cat:findCol(hdrs,['categoría','categoria']),raza:findCol(hdrs,['raza']),
+      campo:findCol(hdrs,['campo','campo asignado']),peso:findCol(hdrs,['peso','peso (kg)','peso kg']),marca:findCol(hdrs,['marca']),obs:findCol(hdrs,['observaciones','obs'])};
+    var razasValidas=getRazasList().map(function(r){return r.sigla;});
+    _impActAni=[];
+    rows.slice(hRow+1).forEach(function(row){
+      var car=normalizeCaravana(ci.car>-1?String(row[ci.car]||''):'');
+      if(!car||car.toLowerCase().indexOf('ej:')>-1)return;
+      var animal=state.animales.find(function(a){return a.caravana===car;});
+      var errs=[];
+      if(!animal){errs.push('Caravana no encontrada — no se puede actualizar un animal que no existe');}
+
+      // Cada campo se procesa SOLO si la celda tiene contenido. Si viene
+      // vacía, no se agrega a "cambios" y el campo del animal queda intacto.
+      var cambios={};
+
+      var anioRaw=ci.anio>-1?String(row[ci.anio]||'').trim():'';
+      if(anioRaw){
+        var anioNuevo=anioRaw;
+        var _mmYY=anioRaw.match(/^(\d{1,2})[\/\-](\d{2}|\d{4})$/);
+        var _iso=anioRaw.match(/^(\d{4})-(\d{2})-\d{2}/);
+        var _ym=anioRaw.match(/^(\d{4})/);
+        var _my=anioRaw.match(/(\d{4})$/);
+        if(_mmYY){
+          var mm=_mmYY[1].padStart(2,'0');
+          var yy=_mmYY[2];
+          anioNuevo=(yy.length===2?('20'+yy):yy)+'-'+mm;
+        } else if(_iso){ anioNuevo=_iso[1]+'-'+_iso[2]; }
+        else if(_ym){ anioNuevo=_ym[1]; }
+        else if(_my){ anioNuevo=_my[1]; }
+        // Si ninguno de los 4 patrones matcheó, anioNuevo sigue siendo el
+        // texto crudo original (ej: "abc", "n/a") — sin esta validación se
+        // guardaría literalmente como fecha de nacimiento sin ningún aviso.
+        if(anioNuevo===anioRaw && !/^\d{4}(-\d{2})?$/.test(anioNuevo)){
+          errs.push('Fecha de nacimiento no reconocida ("'+anioRaw+'")');
+        } else {
+          cambios.anioNac=anioNuevo;
+        }
+      }
+
+      var sexoRaw=ci.sexo>-1?String(row[ci.sexo]||'').trim().toUpperCase():'';
+      if(sexoRaw){
+        if(sexoRaw!=='M'&&sexoRaw!=='H') errs.push('Sexo inválido ("'+sexoRaw+'")');
+        else cambios.sexo=sexoRaw;
+      }
+
+      var catRaw=ci.cat>-1?String(row[ci.cat]||'').trim():'';
+      if(catRaw){
+        var catResuelta=resolveCategoria(catRaw);
+        if(CAT_NAMES.indexOf(catResuelta)===-1) errs.push('Categoría inválida ("'+catRaw+'" no reconocida)');
+        else cambios.categoria=catResuelta;
+      }
+
+      var razaRaw=ci.raza>-1?String(row[ci.raza]||'').trim():'';
+      if(razaRaw){
+        var segmentos=razaRaw.split(/\s+[xX]\s+|\s+[xX]$|^[xX]\s+|[\-–—]/).map(function(s){return s.trim();}).filter(function(s){return s.length>0&&!/^[xX]$/.test(s);});
+        var razaFinal='';
+        if(segmentos.length===1) razaFinal=segmentos[0];
+        else if(segmentos.length>=2) razaFinal=segmentos[0]+' x '+segmentos[1];
+        if(razaFinal){
+          var siglasRaza=razaFinal.split(' x ').map(function(s){return s.trim().toUpperCase();});
+          var noReconocidas=siglasRaza.filter(function(s){return razasValidas.indexOf(s)===-1;});
+          if(noReconocidas.length) errs.push('Raza inválida ("'+razaFinal+'": '+noReconocidas.join(', ')+' no reconocida)');
+          else cambios.raza=siglasRaza.join(' x ');
+        }
+      }
+
+      var campoRaw=ci.campo>-1?String(row[ci.campo]||'').trim():'';
+      if(campoRaw){
+        var campoRes=resolveCampoPorPrefijo(campoRaw);
+        if(!campoRes.campoId) errs.push('Campo no reconocido ("'+campoRaw+'")');
+        else cambios.campoId=campoRes.campoId;
+      }
+
+      var pesoRaw=ci.peso>-1?String(row[ci.peso]||'').trim():'';
+      if(pesoRaw){
+        // Acepta números con coma o punto decimal; rechaza cualquier otro
+        // texto ("mucho", "?", "-") que antes se guardaba tal cual sin
+        // ninguna verificación de que fuera un peso real.
+        var pesoNormalizado=pesoRaw.replace(',','.');
+        if(!/^\d+(\.\d+)?$/.test(pesoNormalizado) || parseFloat(pesoNormalizado)<=0){
+          errs.push('Peso inválido ("'+pesoRaw+'")');
+        } else {
+          cambios.peso=pesoNormalizado;
+        }
+      }
+
+      var marcaRaw=ci.marca>-1?String(row[ci.marca]||'').trim():'';
+      if(marcaRaw){
+        var marcaResuelta=resolveMarca(marcaRaw);
+        // resolveMarca devuelve el texto original sin traducir si no
+        // matchea ninguna marca conocida — antes se aceptaba igual sin
+        // chequear el resultado, guardando un valor sin sentido en marca.
+        var marcasValidas=getMarcasList().map(function(m){return m.id;});
+        if(marcasValidas.indexOf(marcaResuelta)===-1){
+          errs.push('Marca no reconocida ("'+marcaRaw+'")');
+        } else {
+          cambios.marca=marcaResuelta;
+        }
+      }
+
+      var obsRaw=ci.obs>-1?String(row[ci.obs]||'').trim():'';
+      if(obsRaw) cambios.obs=obsRaw;
+
+      if(animal && Object.keys(cambios).length===0 && !errs.length){
+        errs.push('Sin ningún campo con dato para actualizar');
+      }
+
+      _impActAni.push({
+        caravana:car,
+        animalId:animal?animal.id:null,
+        animalActual:animal||null,
+        cambios:cambios,
+        _e:errs
+      });
+    });
+    renderActAniPreview();
+  });
+}
+function renderActAniPreview(){
+  var el=document.getElementById('imp-actani-result');
+  var ok=_impActAni.filter(function(r){return !r._e.length;}).length;
+  var bad=_impActAni.length-ok;
+  if(!_impActAni.length){el.innerHTML='<div class="alert alert-warn">Sin filas válidas para procesar.</div>';return;}
+  var html='<div class="alert '+(bad?'alert-warn':'alert-ok')+'" style="margin-top:12px">'+_impActAni.length+' filas — <b>'+ok+' listas para actualizar</b>'+(bad?', '+bad+' con errores':'')+'</div>'
+    +'<div class="prev-wrap"><div class="prev-hdr"><span style="width:110px">Caravana</span><span>Campos a actualizar</span></div>'
+    +_impActAni.map(function(r){
+      var camposTxt=Object.keys(r.cambios).length
+        ?Object.keys(r.cambios).map(function(k){
+          return k==='obs' ? 'obs: (se agrega) '+r.cambios[k] : k+': '+r.cambios[k];
+        }).join(' · ')
+        :'<span style="color:var(--txt3)">—</span>';
+      return '<div class="prev-row '+(r._e.length?'prev-err':'prev-ok')+'">'
+        +'<span style="width:110px" class="mono">'+formatCaravana(r.caravana)+'</span>'
+        +'<span>'+camposTxt+(r._e.length?' <span style="color:var(--r600);font-size:10px">'+r._e.join(', ')+'</span>':'')+'</span></div>';
+    }).join('')
+    +'</div>';
+  el.innerHTML=html;
+  if(ok>0){
+    var btn=document.getElementById('btn-imp-actani');
+    btn.style.display='inline-flex';
+    btn.textContent='Verificar '+ok+' actualizaciones';
+  }
+}
+
+// Pantalla de verificación editable, mismo patrón que renderVerificacionAni
+// para altas: permite revisar/corregir antes de escribir en Firestore.
+function renderVerificacionActAni(){
+  var validas=_impActAni.filter(function(r){return !r._e.length;});
+  if(!validas.length){toast('No hay actualizaciones válidas para aplicar');return;}
+  var rows=validas.map(function(r,i){
+    var animal=r.animalActual;
+    var filasCambio=Object.keys(r.cambios).map(function(campo){
+      var valorViejo=animal[campo]!==undefined&&animal[campo]!==''?animal[campo]:'—';
+      if(campo==='obs'){
+        return '<div style="font-size:11px;padding:2px 0"><b>obs</b>: se agrega "<span style="color:var(--g700);font-weight:700">'+r.cambios[campo]+'</span>" al texto existente'+(animal.obs?' ("'+animal.obs+'")':' (hoy vacío)')+'</div>';
+      }
+      return '<div style="font-size:11px;padding:2px 0"><b>'+campo+'</b>: '+valorViejo+' → <span style="color:var(--g700);font-weight:700">'+r.cambios[campo]+'</span></div>';
+    }).join('');
+    return '<tr><td class="mono">'+formatCaravana(r.caravana)+'</td><td>'+filasCambio+'</td></tr>';
+  }).join('');
+  var html='<div class="modal-hdr"><h3>Verificar actualizaciones</h3><button class="close-x" onclick="closeModal()">&#215;</button></div>'
+    +'<div class="modal-body">'
+    +'<div class="alert alert-warn" style="margin-bottom:10px">Revise el cambio de cada animal antes de confirmar. Los campos no listados quedan exactamente como están hoy.</div>'
+    +'<div class="tbl-wrap" style="max-height:400px;overflow-y:auto"><table><thead><tr><th>Caravana</th><th>Cambios (actual → nuevo)</th></tr></thead>'
+    +'<tbody id="verif-actani-tbody">'+rows+'</tbody></table></div></div>'
+    +'<div class="modal-foot">'
+    +'<button class="btn btn-s" onclick="processActAniFile(document.getElementById(\'fi-actani\').files[0])">← Volver al preview</button>'
+    +'<button class="btn btn-p" onclick="doActualizarAni()">Confirmar '+validas.length+' actualizaciones</button>'
+    +'</div>';
+  document.getElementById('modal-box').innerHTML=html;
+  window._impActAniVerificados=validas;
+}
+function doActualizarAni(){
+  var fuente=window._impActAniVerificados||_impActAni.filter(function(r){return !r._e.length;});
+  var actualizados=0;
+  fuente.forEach(function(r){
+    var animal=state.animales.find(function(a){return a.id===r.animalId;});
+    if(!animal)return;
+    Object.keys(r.cambios).forEach(function(campo){
+      if(campo==='obs'){
+        // A diferencia del resto de los campos (que reemplazan el valor
+        // actual), Observaciones se agrega al texto existente en vez de
+        // sobrescribirlo — perder anotaciones previas de un animal por
+        // una actualización de lote sería un efecto destructivo que
+        // nadie pidió explícitamente.
+        animal.obs = animal.obs ? (animal.obs+' | '+r.cambios[campo]) : r.cambios[campo];
+      } else {
+        animal[campo]=r.cambios[campo];
+      }
+    });
+    actualizados++;
+  });
+  window._impActAniVerificados=null;
+  save('animales');closeModal();renderAnimales();
+  toast(actualizados+' animales actualizados por lote');
+}
 function processAniFile(file){
   if(!file)return;
   parseXLSX(file,function(err,rows){
