@@ -2621,6 +2621,10 @@ function processActAniFile(file){
       if(anioRaw){
         var anioNuevo=anioRaw;
         var _mmYY=anioRaw.match(/^(\d{1,2})[\/\-](\d{2}|\d{4})$/);
+        // aaaa-mm: antes no existía este patrón, y "2023-04" caía en _ym
+        // (que solo extrae el año), perdiendo el mes en silencio sin
+        // ningún aviso — el resultado "2023" pasaba la validación igual.
+        var _aaaaMm=anioRaw.match(/^(\d{4})-(\d{1,2})$/);
         var _iso=anioRaw.match(/^(\d{4})-(\d{2})-\d{2}/);
         var _ym=anioRaw.match(/^(\d{4})/);
         var _my=anioRaw.match(/(\d{4})$/);
@@ -2628,7 +2632,8 @@ function processActAniFile(file){
           var mm=_mmYY[1].padStart(2,'0');
           var yy=_mmYY[2];
           anioNuevo=(yy.length===2?('20'+yy):yy)+'-'+mm;
-        } else if(_iso){ anioNuevo=_iso[1]+'-'+_iso[2]; }
+        } else if(_aaaaMm){ anioNuevo=_aaaaMm[1]+'-'+_aaaaMm[2].padStart(2,'0'); }
+        else if(_iso){ anioNuevo=_iso[1]+'-'+_iso[2]; }
         else if(_ym){ anioNuevo=_ym[1]; }
         else if(_my){ anioNuevo=_my[1]; }
         // Si ninguno de los 4 patrones matcheó, anioNuevo sigue siendo el
@@ -2821,6 +2826,9 @@ function processAniFile(file){
       var anio=_anioRaw;
       if(_anioRaw){
         var _mmYY = _anioRaw.match(/^(\d{1,2})[\/\-](\d{2}|\d{4})$/);
+        // aaaa-mm: mismo agregado que en el modal de actualización, evita
+        // que "2023-04" pierda el mes al caer en el patrón de solo año.
+        var _aaaaMm = _anioRaw.match(/^(\d{4})-(\d{1,2})$/);
         var _iso = _anioRaw.match(/^(\d{4})-(\d{2})-\d{2}/);
         var _ym = _anioRaw.match(/^(\d{4})/);
         var _my = _anioRaw.match(/(\d{4})$/);
@@ -2832,6 +2840,8 @@ function processAniFile(file){
           // del 2000, este supuesto lo fecha mal — corregir a mano si aplica.
           var yyyy = yy.length===2 ? ('20'+yy) : yy;
           anio = yyyy+'-'+mm;
+        } else if(_aaaaMm){
+          anio = _aaaaMm[1]+'-'+_aaaaMm[2].padStart(2,'0');
         } else if(_iso){
           anio = _iso[1]+'-'+_iso[2];
         } else if(_ym){
