@@ -2630,13 +2630,30 @@ function diagnosticarRazaTruncada(){
   }).join('');
   var html='<div class="modal-hdr"><h3>Razas truncadas encontradas</h3><button class="close-x" onclick="closeModal()">&#215;</button></div>'
     +'<div class="modal-body">'
-    +'<div class="alert alert-warn">Se encontraron <b>'+truncados.length+'</b> animal(es) con la raza guardada de forma incompleta (termina en "x" sin la segunda sigla, probablemente de una importación anterior a la corrección de este defecto). Revisá la lista antes de confirmar — se va a quitar la "x" colgante, dejando solo la sigla real.</div>'
+    +'<div class="alert alert-warn">Se encontraron <b>'+truncados.length+'</b> animal(es) con la raza guardada de forma incompleta (termina en "x" sin la segunda sigla, probablemente de una importación anterior a la corrección de este defecto). Antes de corregir, se recomienda exportar esta lista y comparar contra la planilla física de origen — la corrección automática asume que la sigla que quedó guardada es la correcta, pero si la raza real era una cruza, la segunda sigla ya se perdió en la importación vieja y no se puede recuperar desde acá.</div>'
     +'<div class="tbl-wrap" style="max-height:350px;overflow-y:auto"><table><thead><tr><th>Caravana</th><th>Raza actual</th><th>Se corrige a</th></tr></thead>'
     +'<tbody>'+filas+'</tbody></table></div></div>'
     +'<div class="modal-foot"><button class="btn btn-s" onclick="closeModal()">Cancelar</button>'
+    +'<button class="btn btn-xls" onclick="exportarRazaTruncada()">&#8681; Exportar lista</button>'
     +'<button class="btn btn-p" onclick="confirmarCorreccionRazaTruncada()">Corregir '+truncados.length+' animal(es)</button></div>';
   document.getElementById('modal-box').innerHTML=html;
   window._razaTruncadaIds=truncados.map(function(a){return a.id;});
+  window._razaTruncadaAnimales=truncados;
+}
+function exportarRazaTruncada(){
+  var lista=window._razaTruncadaAnimales||[];
+  if(!lista.length){toast('No hay datos para exportar');return;}
+  var data=[['Caravana','Categoría','Raza actual (truncada)','Se corregiría a','Campo']].concat(
+    lista.map(function(a){
+      var razaCorregida=a.raza.trim().replace(/\sx$/i,'').trim();
+      return [a.caravana?formatCaravana(a.caravana):'Sin caravana', a.categoria||'', a.raza, razaCorregida, getCampo(a.campoId).nombre||''];
+    })
+  );
+  var wb=XLSX.utils.book_new();
+  var ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[{wch:16},{wch:18},{wch:18},{wch:16},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,ws,'Razas truncadas');
+  XLSX.writeFile(wb,'razas_truncadas_'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
 function confirmarCorreccionRazaTruncada(){
   var ids=window._razaTruncadaIds||[];
