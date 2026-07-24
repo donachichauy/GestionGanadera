@@ -1885,10 +1885,11 @@ function renderExistencias(){
     +'<option value="">Todos los campos</option>'
     +state.campos.map(function(c){return'<option value="'+c.id+'"'+(_exCampo===c.id?' selected':'')+'>'+c.nombre+'</option>'}).join('')
     +'</select></div><span style="font-size:12px;color:var(--txt3);align-self:flex-end;padding-bottom:2px">Ejercicio: <b>'+anio+'</b></span></div>';
+  var catsConDatos=CAT_NAMES.filter(function(cat){return (totales[cat]||0)>0;});
   var tbl;
   if(isMobile()){
     tbl='<div class="card-list">'
-      +CAT_NAMES.map(function(cat){
+      +catsConDatos.map(function(cat){
         var n=totales[cat];
         var desgloseSexo='';
         if(cat==='Ternero/a'&&n>0){
@@ -1912,7 +1913,7 @@ function renderExistencias(){
       +'</div>';
   } else {
     tbl='<table class="exist-tbl"><thead><tr><th>Categoría</th><th>Cantidad</th><th>% Rodeo</th></tr></thead><tbody>'
-      +CAT_NAMES.map(function(cat){
+      +catsConDatos.map(function(cat){
         var n=totales[cat];
         var desgloseSexo='';
         if(cat==='Ternero/a'&&n>0){
@@ -1937,7 +1938,6 @@ function renderExistencias(){
   // Ternero/a se agrega el desglose por sexo debajo, dentro de la misma
   // tarjeta. Se ordenan en grid de 2 columnas, solo categorías con datos
   // (>0) para no mostrar tarjetas vacías sin sentido.
-  var catsConDatos=CAT_NAMES.filter(function(cat){return (totales[cat]||0)>0;});
   var legendCards=catsConDatos.map(function(cat){
     var n=totales[cat];
     var pct=total>0?(n/total*100).toFixed(1):'0.0';
@@ -2035,8 +2035,19 @@ function renderExistencias(){
   // "HE" o "HE x RA" son dos filas distintas, sin descomponer la cruza en
   // sus dos siglas) — así la suma de la columna Cantidad siempre coincide
   // con el total, sin doble conteo de un mismo animal en dos filas.
+  // Normaliza SOLO la clave de agrupación de este resumen (ordena las
+  // siglas alfabéticamente) para que "HE x RA" y "RA x HE" cuenten como una
+  // sola fila — el orden padre/madre real sigue guardado sin cambios en
+  // a.raza, por si a futuro se implementa trazabilidad genética que
+  // dependa de saber cuál fue el padre y cuál la madre.
+  function claveRazaAgrupada(razaOriginal){
+    if(!razaOriginal) return 'Sin dato';
+    var partes=razaOriginal.split(' x ').map(function(s){return s.trim();});
+    if(partes.length===2) return partes.slice().sort().join(' x ');
+    return razaOriginal;
+  }
   var porRaza={};
-  lista.forEach(function(a){var r=a.raza||'Sin dato';porRaza[r]=(porRaza[r]||0)+1;});
+  lista.forEach(function(a){var r=claveRazaAgrupada(a.raza);porRaza[r]=(porRaza[r]||0)+1;});
   var razaKeys=Object.keys(porRaza).sort(function(a,b){return porRaza[b]-porRaza[a];});
   var resumenRaza='';
   if(razaKeys.length){
@@ -2428,7 +2439,7 @@ function renderAnimales(){
     return;
   }
 
-  document.getElementById('content').innerHTML='<div class="panel"><div class="panel-hdr"><h3>Rodeo</h3><div class="btns"><button class="btn btn-xls btn-sm" onclick="showImportAnimalesModal()">&#8679; Importar Excel</button><button class="btn btn-s btn-sm" onclick="showImportActualizarAnimalesModal()">✎ Actualizar por lote</button><button class="btn btn-p btn-sm" onclick="newAnimal()">+ Nuevo</button></div></div>'
+  document.getElementById('content').innerHTML='<div class="panel"><div class="panel-hdr"><h3>Rodeo</h3><div class="btns"><button class="btn btn-xls btn-sm" onclick="showImportAnimalesModal()">&#8679; Importar Excel</button><button class="btn btn-s btn-sm" onclick="showImportActualizarAnimalesModal()">✎ Actualizar por lote</button><button class="btn btn-s btn-sm" onclick="diagnosticarRazaTruncada()">⚠ Revisar razas truncadas</button><button class="btn btn-p btn-sm" onclick="newAnimal()">+ Nuevo</button></div></div>'
     +'<div class="panel-body" style="padding-bottom:4px"><div class="filters">'
     +'<div class="field"><label>Buscar</label><input id="ani-search-d" value="'+aniSearch+'" oninput="aniSearch=this.value;conFocoPreservado(renderAnimales)" placeholder="Caravana..."></div>'
     +'<div class="field"><label>Categoría</label><select onchange="aniCat=this.value;renderAnimales()"><option value="">Todas</option>'+CAT_NAMES.map(function(c){return'<option'+(aniCat===c?' selected':'')+'>'+c+'</option>'}).join('')+'</select></div>'
@@ -2590,6 +2601,56 @@ function animalModal(a){
     +'</div>';
 }
 function newAnimal(){ openModal(animalModal()); }
+
+// ── DIAGNÓSTICO DE RAZA TRUNCADA ──────────────────────────────────────────────
+// Detecta animales con raza guardada como "XX x" (segunda sigla faltante,
+// separador colgando) — el mismo defecto que ya corregimos en el
+// importador hace varios turnos, pero que puede seguir presente en
+// registros guardados ANTES de esa corrección. No se corrige nada de forma
+// automática: se muestra la lista completa y se pide confirmación explícita
+// antes de escribir ningún cambio en Firestore.
+function diagnosticarRazaTruncada(){
+  var truncados=state.animales.filter(function(a){
+    if(!a.raza) return false;
+    // Patrón: termina en " x" (con espacio antes), sin nada después —
+    // el separador de cruza sin segunda sigla.
+    return /\sx$/i.test(a.raza.trim());
+  });
+  if(!truncados.length){
+    toast('No se encontraron animales con raza truncada');
+    return;
+  }
+  var filas=truncados.map(function(a){
+    var razaCorregida=a.raza.trim().replace(/\sx$/i,'').trim();
+    return '<tr data-id="'+a.id+'" data-nueva="'+razaCorregida+'">'
+      +'<td class="mono">'+(a.caravana?formatCaravana(a.caravana):'<i style="color:var(--txt3)">Sin caravana</i>')+'</td>'
+      +'<td>'+a.raza+'</td>'
+      +'<td>→ <b style="color:var(--g700)">'+razaCorregida+'</b></td>'
+      +'</tr>';
+  }).join('');
+  var html='<div class="modal-hdr"><h3>Razas truncadas encontradas</h3><button class="close-x" onclick="closeModal()">&#215;</button></div>'
+    +'<div class="modal-body">'
+    +'<div class="alert alert-warn">Se encontraron <b>'+truncados.length+'</b> animal(es) con la raza guardada de forma incompleta (termina en "x" sin la segunda sigla, probablemente de una importación anterior a la corrección de este defecto). Revisá la lista antes de confirmar — se va a quitar la "x" colgante, dejando solo la sigla real.</div>'
+    +'<div class="tbl-wrap" style="max-height:350px;overflow-y:auto"><table><thead><tr><th>Caravana</th><th>Raza actual</th><th>Se corrige a</th></tr></thead>'
+    +'<tbody>'+filas+'</tbody></table></div></div>'
+    +'<div class="modal-foot"><button class="btn btn-s" onclick="closeModal()">Cancelar</button>'
+    +'<button class="btn btn-p" onclick="confirmarCorreccionRazaTruncada()">Corregir '+truncados.length+' animal(es)</button></div>';
+  document.getElementById('modal-box').innerHTML=html;
+  window._razaTruncadaIds=truncados.map(function(a){return a.id;});
+}
+function confirmarCorreccionRazaTruncada(){
+  var ids=window._razaTruncadaIds||[];
+  var corregidos=0;
+  ids.forEach(function(id){
+    var animal=state.animales.find(function(a){return a.id===id;});
+    if(!animal||!animal.raza) return;
+    animal.raza=animal.raza.trim().replace(/\sx$/i,'').trim();
+    corregidos++;
+  });
+  window._razaTruncadaIds=null;
+  save('animales');closeModal();renderAnimales();
+  toast(corregidos+' animal(es) corregidos');
+}
 function actualizarPotreroSelector(campoId){
   var actual=document.getElementById('a-pot');
   if(!actual)return;
