@@ -2432,7 +2432,7 @@ function renderAnimales(){
       +'<div class="btns"><button class="btn btn-xls btn-sm" onclick="showImportAnimalesModal()">&#8679; Excel</button>'
       +'<button class="btn btn-p btn-sm" onclick="newAnimal()">+</button></div></div>'
       +'<div class="panel-body" style="padding:0 0 4px"><div class="filters" style="padding:10px 14px 0">'
-      +'<div class="field" style="flex:1"><input id="ani-search-m" value="'+aniSearch+'" oninput="aniSearch=this.value;conFocoPreservado(renderAnimales)" placeholder="&#128269; Buscar caravana..." style="width:100%"></div>'
+      +'<div class="field" style="flex:1"><input id="ani-search-m" value="'+aniSearch+'" inputmode="numeric" oninput="aniSearch=this.value;conFocoPreservado(renderAnimales)" placeholder="&#128269; Buscar caravana..." style="width:100%"></div>'
       +'<div class="field"><select onchange="aniCat=this.value;renderAnimales()"><option value="">Categoría...</option>'+CAT_NAMES.map(function(c){return'<option'+(aniCat===c?' selected':'')+'>'+c+'</option>'}).join('')+'</select></div>'
       +'<div class="field"><select onchange="aniOrdenCaravana=this.value;renderAnimales()"><option value="">Orden: sin ordenar</option><option value="asc"'+(aniOrdenCaravana==='asc'?' selected':'')+'>Caravana ▲</option><option value="desc"'+(aniOrdenCaravana==='desc'?' selected':'')+'>Caravana ▼</option></select></div>'
       +'</div></div>'
@@ -2442,7 +2442,7 @@ function renderAnimales(){
 
   document.getElementById('content').innerHTML='<div class="panel"><div class="panel-hdr"><h3>Rodeo</h3><div class="btns"><button class="btn btn-xls btn-sm" onclick="showImportAnimalesModal()">&#8679; Importar Excel</button><button class="btn btn-s btn-sm" onclick="showImportActualizarAnimalesModal()">✎ Actualizar por lote</button><button class="btn btn-s btn-sm" onclick="diagnosticarRazaTruncada()">⚠ Revisar razas truncadas</button><button class="btn btn-p btn-sm" onclick="newAnimal()">+ Nuevo</button></div></div>'
     +'<div class="panel-body" style="padding-bottom:4px"><div class="filters">'
-    +'<div class="field"><label>Buscar</label><input id="ani-search-d" value="'+aniSearch+'" oninput="aniSearch=this.value;conFocoPreservado(renderAnimales)" placeholder="Caravana..."></div>'
+    +'<div class="field"><label>Buscar</label><input id="ani-search-d" value="'+aniSearch+'" inputmode="numeric" oninput="aniSearch=this.value;conFocoPreservado(renderAnimales)" placeholder="Caravana..."></div>'
     +'<div class="field"><label>Categoría</label><select onchange="aniCat=this.value;renderAnimales()"><option value="">Todas</option>'+CAT_NAMES.map(function(c){return'<option'+(aniCat===c?' selected':'')+'>'+c+'</option>'}).join('')+'</select></div>'
     +(function(){
         // Build raza options from actual animal data (includes combined razas like "AA x HE")
@@ -3116,7 +3116,7 @@ function renderVerificacionAni(){
   var rows = validas.map(function(r, i){
     var resaltado = r._autocompletada ? 'background:#FFF8E1' : '';
     return '<tr data-idx="'+i+'" style="'+resaltado+'">'
-      +'<td><input type="text" value="'+r.caravana+'" style="width:110px;font-family:monospace" '
+      +'<td><input type="text" value="'+r.caravana+'" inputmode="numeric" style="width:110px;font-family:monospace" '
         +'onchange="_impAniVerifUpdate('+i+',\'caravana\',this.value)"></td>'
       +'<td>'+(r._autocompletada?'<span title="Se completaron ceros a la izquierda automáticamente" style="color:#B8860B">⚠ auto</span>':'—')+'</td>'
       +'<td>'+formatFechaNac(r.anioNac||'')+'</td>'
@@ -3841,7 +3841,7 @@ function renderVacAnimales(loteId){
     // Filters + import
     +'<div class="panel"><div class="panel-hdr" style="gap:8px;flex-wrap:wrap">'
     +'<div class="filters" style="flex:1;padding:0;border:none;background:none">'
-    +'<div class="field"><input id="vac-s" value="'+_vacSearch+'" placeholder="🔍 Buscar caravana..." '
+    +'<div class="field"><input id="vac-s" value="'+_vacSearch+'" inputmode="numeric" placeholder="🔍 Buscar caravana..." '
       +'oninput="_vacSearch=this.value.toLowerCase();renderVacAnimales(\''+loteId+'\')"></div>'
     +'<div class="field"><select onchange="_vacCatF=this.value;renderVacAnimales(\''+loteId+'\')">'+catOpts+'</select></div>'
     +'<div class="field"><select onchange="_vacCamF=this.value;_vacPotF=\'\';renderVacAnimales(\''+loteId+'\')">'+camOpts+'</select></div>'
@@ -4587,7 +4587,7 @@ function renderCaravanas(){
     +'<div class="panel-body">'
     +'<div class="alert alert-info" style="margin-bottom:16px">Busque el animal por su caravana actual y asigne el nuevo número.</div>'
     +'<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">'
-    +'<input id="car-busq" placeholder="🔍 Buscar caravana actual..." style="flex:1;min-width:200px;padding:9px 12px;border:1.5px solid var(--brd);border-radius:var(--rad);font-size:13px" oninput="buscarParaCambioCaravana()">'
+    +'<input id="car-busq" inputmode="numeric" placeholder="🔍 Buscar caravana actual..." style="flex:1;min-width:200px;padding:9px 12px;border:1.5px solid var(--brd);border-radius:var(--rad);font-size:13px" oninput="buscarParaCambioCaravana()">'
     +'</div>'
     +'<div id="car-results"></div>'
     +'</div></div>';
@@ -4607,7 +4607,7 @@ function buscarParaCambioCaravana(){
       +'<div style="font-family:monospace;font-weight:700;font-size:14px">'+(a.caravana||'S/C')+'</div>'
       +'<div style="font-size:12px;color:var(--txt3)">'+( a.categoria||'—')+' · '+(a.raza||'—')+'</div>'
       +'</div>'
-      +'<input id="new-car-'+a.id+'" placeholder="UY 00000 0000" style="width:180px;padding:7px 10px;border:1.5px solid var(--brd);border-radius:var(--rad);font-family:monospace;font-size:13px" oninput="applyCaravanaMask(this)" maxlength="14">'
+      +'<input id="new-car-'+a.id+'" inputmode="numeric" placeholder="UY 00000 0000" style="width:180px;padding:7px 10px;border:1.5px solid var(--brd);border-radius:var(--rad);font-family:monospace;font-size:13px" oninput="applyCaravanaMask(this)" maxlength="14">'
       +'<button class="btn btn-p btn-sm" onclick="aplicarCambioCaravana(\''+a.id+'\')">Cambiar</button>'
       +'</div>';
   }).join('');
@@ -5747,7 +5747,7 @@ function renderAsignarCampo(){
 
   var html='<div class="panel"><div class="panel-hdr"><h3>Animales sin campo asignado <span class="badge ba" style="margin-left:6px">'+sinCampo.length+'</span></h3></div>'
     +'<div class="panel-body"><div class="filters">'
-    +'<div class="field"><label>Buscar</label><input id="as-search" value="'+_asSearch+'" oninput="_asSearch=this.value;conFocoPreservado(renderAsignarCampo)" placeholder="Caravana..."></div>'
+    +'<div class="field"><label>Buscar</label><input id="as-search" value="'+_asSearch+'" inputmode="numeric" oninput="_asSearch=this.value;conFocoPreservado(renderAsignarCampo)" placeholder="Caravana..."></div>'
     +'<div class="field"><label>Categoría</label><select onchange="_asCat=this.value;renderAsignarCampo()"><option value="">Todas</option>'+CAT_NAMES.map(function(c){return'<option'+(_asCat===c?' selected':'')+'>'+c+'</option>'}).join('')+'</select></div>'
     +'</div></div>'
     +'<div class="tbl-wrap"><table><thead><tr>'
@@ -5831,7 +5831,7 @@ function renderAsignarPotrero(){
 
   var html='<div class="panel"><div class="panel-hdr"><h3>Asignar Potrero <span class="badge ba" style="margin-left:6px">'+activos.length+'</span></h3></div>'
     +'<div class="panel-body"><div class="filters">'
-    +'<div class="field"><label>Buscar</label><input id="ap-search" value="'+_apSearch+'" oninput="_apSearch=this.value;conFocoPreservado(renderAsignarPotrero)" placeholder="Caravana..."></div>'
+    +'<div class="field"><label>Buscar</label><input id="ap-search" value="'+_apSearch+'" inputmode="numeric" oninput="_apSearch=this.value;conFocoPreservado(renderAsignarPotrero)" placeholder="Caravana..."></div>'
     +'<div class="field"><label>Categoría</label><select onchange="_apCat=this.value;renderAsignarPotrero()"><option value="">Todas</option>'+CAT_NAMES.map(function(c){return'<option'+(_apCat===c?' selected':'')+'>'+c+'</option>';}).join('')+'</select></div>'
     +'<div class="field"><label>Campo (obligatorio para elegir potrero destino)</label><select onchange="_apCampoFiltro=this.value;_apSelIds=[];renderAsignarPotrero()"><option value="">Seleccionar campo...</option>'+state.campos.map(function(c){return'<option value="'+c.id+'"'+(_apCampoFiltro===c.id?' selected':'')+'>'+c.nombre+'</option>';}).join('')+'</select></div>'
     +'</div></div>'
@@ -5904,7 +5904,7 @@ function renderManejo(){
     +'<div class="panel-body">'
     +'<div class="alert alert-info">Seleccione los animales a mover y elija el campo destino. Puede seleccionar varios a la vez o usar "Seleccionar todos los filtrados".</div>'
     +'<div class="filters">'
-    +'<div class="field"><label>Buscar</label><input id="mnj-search" value="'+_mnjSearch+'" oninput="_mnjSearch=this.value;conFocoPreservado(renderManejo)" placeholder="Caravana..."></div>'
+    +'<div class="field"><label>Buscar</label><input id="mnj-search" value="'+_mnjSearch+'" inputmode="numeric" oninput="_mnjSearch=this.value;conFocoPreservado(renderManejo)" placeholder="Caravana..."></div>'
     +'<div class="field"><label>Categoría</label><select onchange="_mnjCat=this.value;renderManejo()"><option value="">Todas</option>'+CAT_NAMES.map(function(c){return'<option'+(_mnjCat===c?' selected':'')+'>'+c+'</option>'}).join('')+'</select></div>'
     +'<div class="field"><label>Campo actual</label><select onchange="_mnjCampo=this.value;_mnjPotrero=\'\';renderManejo()"><option value="">Todos</option>'+state.campos.map(function(c){return'<option value="'+c.id+'"'+(_mnjCampo===c.id?' selected':'')+'>'+c.nombre+'</option>'}).join('')+'</select></div>'
     +'<div class="field"><label>Potrero actual</label>'+(_mnjCampo?'<select onchange="_mnjPotrero=this.value;renderManejo()"><option value="">Todos</option>'+potrerosOpts(_mnjCampo).map(function(p){return'<option value="'+p.v+'"'+(_mnjPotrero===p.v?' selected':'')+'>'+p.l+'</option>';}).join('')+'</select>':'<select disabled><option>Elija un campo</option></select>')+'</div>'
