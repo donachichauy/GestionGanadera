@@ -1567,6 +1567,7 @@ function caravanaInput(val, id) {
   if(n && /^UY\d{9}$/.test(n)) display = 'UY ' + n.slice(2,7) + ' ' + n.slice(7);
   return '<div>'
     +'<input id="'+id+'" value="'+display+'" placeholder="UY 00000 0000" '
+    +'inputmode="numeric" '
     +'style="font-family:monospace;letter-spacing:1.5px;text-transform:uppercase;font-size:15px;font-weight:600" '
     +'oninput="applyCaravanaMask(this)" '
     +'maxlength="14">'
@@ -1576,11 +1577,11 @@ function caravanaInput(val, id) {
 
 // Aplica la máscara UY 00000 0000 mientras el usuario escribe
 function applyCaravanaMask(inp) {
-  var raw = inp.value.toUpperCase().replace(/[^UY0-9]/gi, function(c){
-    return /[0-9]/.test(c) ? c : '';
-  });
-  // Extract only digits
-  var digits = raw.replace(/[^0-9]/g,'');
+  // El prefijo UY nunca se tipea a mano — el usuario solo ingresa dígitos,
+  // es más práctico desde el teclado numérico del celular. Se extraen
+  // directamente los dígitos del valor, sin pasos intermedios que
+  // preserven U/Y como si pudieran venir escritas por el usuario.
+  var digits = inp.value.replace(/[^0-9]/g,'');
   // Rebuild: UY + up to 5 + space + up to 4
   var out = 'UY';
   if(digits.length > 0) out += ' ' + digits.slice(0,5);
@@ -2174,7 +2175,7 @@ function campoModal(c){c=c||{};
     +'<div class="modal-body">'+(c.id?'<input type="hidden" id="eid" value="'+c.id+'">' :'')
     +'<div class="fgrid">'
     +'<div class="field"><label>Nombre</label><input id="c-nom" value="'+(c.nombre||'')+'" placeholder="Ej: Potrero Norte"></div>'
-    +'<div class="field"><label>Área (ha)</label><input id="c-area" type="number" step="0.01" value="'+(c.area||'')+'"></div>'
+    +'<div class="field"><label>Área (ha)</label><input id="c-area" type="number" inputmode="decimal" step="0.01" value="'+(c.area||'')+'"></div>'
     +'<div class="field"><label>Región</label>'+selHtml(REGIONES,c.region||'','Seleccionar...')+'</div>'
     +'<div class="field"><label>Descripción</label><input id="c-desc" value="'+(c.desc||'')+'"></div>'
     +'<div class="field"><label>N° DICOSE <small style="color:var(--txt3);font-weight:400">(por campo)</small></label><input id="c-dic" value="'+(c.dicosse||'')+'" placeholder="Ej: 12345-67"></div>'
@@ -2227,7 +2228,7 @@ function potreroModal(campoId,p){
     +'<input type="hidden" id="p-campo" value="'+(p.campoId||campoId)+'">'
     +'<div class="fgrid">'
     +'<div class="field"><label>Nombre</label><input id="p-nom" value="'+(p.nombre||'')+'" placeholder="Ej: Potrero Sur, Costa del arroyo"></div>'
-    +'<div class="field"><label>Área (ha)</label><input id="p-area" type="number" step="0.01" value="'+(p.area||'')+'"></div>'
+    +'<div class="field"><label>Área (ha)</label><input id="p-area" type="number" inputmode="decimal" step="0.01" value="'+(p.area||'')+'"></div>'
     +'</div></div>'
     +'<div class="modal-foot"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="savePotrero()">Guardar</button></div>';
 }
@@ -2333,7 +2334,7 @@ function mejoraModal(m){m=m||{};
     +'<div class="field"><label>Potrero <small style="color:var(--txt3);font-weight:400">(opcional — acota la mejora a un potrero específico)</small></label>'+(m.campoId?selHtml(potrerosOpts(m.campoId),m.potreroId||'','Todo el campo','m-pot').replace('<select id="m-pot"','<select id="m-pot" onchange="var w=document.getElementById(\'mej-ani-wrap\');if(w)w.innerHTML=buildMejAniList(gv(\'m-cam\'),this.value,[])"'):'<select id="m-pot" disabled><option>Elija un campo primero</option></select>')+'</div>'
     +'<div class="field"><label>Fecha (Día / Mes / Año)</label>'    +'<div style="display:flex;gap:6px">'    +'<select id="m-dia" style="flex:0.8"><option value="">Día...</option>'    +(function(){var s='';for(var d=1;d<=31;d++){var v=String(d).padStart(2,'0');s+='<option value="'+v+'"'+((m.fecha||'').slice(8,10)===v?' selected':'')+'>'+d+'</option>';}return s;}())    +'</select>'    +'<select id="m-mes" style="flex:1.2"><option value="">Mes...</option>'    +'<option value="01"'+((m.fecha||'').slice(5,7)==='01'?' selected':'')+'>Enero</option>'    +'<option value="02"'+((m.fecha||'').slice(5,7)==='02'?' selected':'')+'>Febrero</option>'    +'<option value="03"'+((m.fecha||'').slice(5,7)==='03'?' selected':'')+'>Marzo</option>'    +'<option value="04"'+((m.fecha||'').slice(5,7)==='04'?' selected':'')+'>Abril</option>'    +'<option value="05"'+((m.fecha||'').slice(5,7)==='05'?' selected':'')+'>Mayo</option>'    +'<option value="06"'+((m.fecha||'').slice(5,7)==='06'?' selected':'')+'>Junio</option>'    +'<option value="07"'+((m.fecha||'').slice(5,7)==='07'?' selected':'')+'>Julio</option>'    +'<option value="08"'+((m.fecha||'').slice(5,7)==='08'?' selected':'')+'>Agosto</option>'    +'<option value="09"'+((m.fecha||'').slice(5,7)==='09'?' selected':'')+'>Septiembre</option>'    +'<option value="10"'+((m.fecha||'').slice(5,7)==='10'?' selected':'')+'>Octubre</option>'    +'<option value="11"'+((m.fecha||'').slice(5,7)==='11'?' selected':'')+'>Noviembre</option>'    +'<option value="12"'+((m.fecha||'').slice(5,7)==='12'?' selected':'')+'>Diciembre</option>'    +'</select>'    +'<select id="m-anio" style="flex:1"><option value="">Año...</option>'    +(function(){var s='';for(var y=new Date().getFullYear()+1;y>=2000;y--){s+='<option value="'+y+'"'+((m.fecha||'').slice(0,4)===String(y)?' selected':'')+'>'+y+'</option>';}return s;}())    +'</select></div></div>'
     +'<div class="field"><label>Tipo</label>'+selHtml(TIPOS_MEJ,m.tipo||'','Seleccionar...','m-tip')+'</div>'
-    +'<div class="field"><label>Área (ha)</label><input id="m-area" type="number" step="0.01" value="'+(m.area||'')+'"></div>'
+    +'<div class="field"><label>Área (ha)</label><input id="m-area" type="number" inputmode="decimal" step="0.01" value="'+(m.area||'')+'"></div>'
     +'<div class="field full"><label>Observaciones</label><textarea id="m-obs">'+(m.obs||'')+'</textarea></div>'    +'<div class="field full" id="mej-ani-wrap">'
     +buildMejAniList(m.campoId, m.potreroId, m.animalesIds||[])
     +'</div>'    +'</div></div>'
@@ -2590,7 +2591,7 @@ function animalModal(a){
     +'<div class="field"><label>Potrero</label>'+(a.campoId?selHtml(potrerosOpts(a.campoId),a.potreroId||'','Sin asignar','a-pot'):'<select id="a-pot" disabled><option>Elija un campo primero</option></select>')+'</div>'
     +'<div class="field"><label>Fecha de nacimiento (Mes / Año)</label>'+fechaNacWidget(a.anioNac||'','a-mes','a-anio')+'</div>'
     +'<div class="field"><label>Sexo</label><select id="a-sex"><option value="H"'+(a.sexo==='H'?' selected':'')+'>Hembra</option><option value="M"'+(a.sexo==='M'?' selected':'')+'>Macho</option></select></div>'
-    +'<div class="field"><label>Peso (kg)</label><input id="a-pes" type="number" value="'+(a.peso||'')+'" placeholder="0"></div>'
+    +'<div class="field"><label>Peso (kg)</label><input id="a-pes" type="number" inputmode="decimal" value="'+(a.peso||'')+'" placeholder="0"></div>'
     +'<div class="field"><label>Estado</label>'+selHtml(ESTADOS_ANI,a.estado||'activo','','a-est')+'</div>'
     +'<div class="field"><label>Marca</label>'+marcasOpts(a.marca||'')+'</div>'
     +'<div class="field full"><label>Observaciones</label><textarea id="a-obs">'+(a.obs||'')+'</textarea></div>'
@@ -3308,7 +3309,7 @@ function entoreModal(e){e=e||{};
     +'<div class="field"><label>Fecha inicio</label><input id="e-fi" type="date" value="'+(e.fechaInicio||'')+'"></div>'
     +'<div class="field"><label>Fecha fin</label><input id="e-ff" type="date" value="'+(e.fechaFin||'')+'"></div>'
     +'<div class="field"><label>Toro (macho de entore)</label>'+selMacho+'</div>'
-    +'<div class="field"><label>Peso del toro (kg)</label><input id="e-pes" type="number" value="'+(e.peso||'')+'" placeholder="0"></div>'
+    +'<div class="field"><label>Peso del toro (kg)</label><input id="e-pes" type="number" inputmode="decimal" value="'+(e.peso||'')+'" placeholder="0"></div>'
     +'</div>'
     +'<div class="field" style="margin-top:12px"><label>Hembras entoreadas (Vacas de Cría y Vaquillonas +2)</label>'+chips+'</div>'
     +'<div class="field" style="margin-top:12px"><label>Observaciones</label><textarea id="e-obs">'+(e.obs||'')+'</textarea></div>'
@@ -3425,7 +3426,7 @@ function criaModal(c){c=c||{};
     +'<div class="field"><label>Campo</label>'+selHtml(camposOpts(),c.campoId||'','Sin asignar','cr-cam').replace('<select id="cr-cam"','<select id="cr-cam" onchange="actualizarPotreroSelectorCria(this.value)"')+'</div>'
     +'<div class="field"><label>Potrero</label>'+(c.campoId?selHtml(potrerosOpts(c.campoId),c.potreroId||'','Sin asignar','cr-pot'):'<select id="cr-pot" disabled><option>Elija un campo primero</option></select>')+'</div>'
     +'<div class="field"><label>N° Caravana cría (opcional)</label>'+caravanaInput(c.caravana||'','cr-car')+'</div>'
-    +'<div class="field"><label>Peso al nacer (kg)</label><input id="cr-pes" type="number" value="'+(c.peso||'')+'"></div>'
+    +'<div class="field"><label>Peso al nacer (kg)</label><input id="cr-pes" type="number" inputmode="decimal" value="'+(c.peso||'')+'"></div>'
     +'<div class="field"><label>Marca (se asigna al año)</label>'+marcasOpts(c.marca||'','cr-marca')+'</div>'
     // "Posible madre": texto libre, sin vínculo a ningún registro. La cría
     // hoy suele detectarse suelta, sin haber visto el parto (rodeo mezclado
@@ -3717,7 +3718,7 @@ function vacunaModal(v){
     +'<div class="field"><label>Fecha</label><input id="v-fec" type="date" value="'+(v.fecha||'')+'"></div>'
     +'<div class="field"><label>Tipo de vacuna</label>'+selVacuna+'</div>'
     +'<div class="field"><label>Nombre / Producto</label><input id="v-nom" value="'+(v.nombre||'')+'" placeholder="Ej: Aftovaxpur DOE, Bovigen..."></div>'
-    +'<div class="field"><label>Dosis (ml)</label><input id="v-dos" type="number" value="'+(v.dosis||'')+'" placeholder="Ej: 2"></div>'
+    +'<div class="field"><label>Dosis (ml)</label><input id="v-dos" type="number" inputmode="decimal" value="'+(v.dosis||'')+'" placeholder="Ej: 2"></div>'
     +'<div class="field"><label>Laboratorio</label><input id="v-lab" value="'+(v.lab||'')+'" placeholder="Zoetis, Merial..."></div>'
     +'<div class="field full"><label>Observaciones</label><textarea id="v-obs">'+(v.obs||'')+'</textarea></div>'
     +'</div></div>'
@@ -4345,8 +4346,8 @@ function compraModal(c){
     +'<div class="field full"><label>Raza (padre × madre)</label>'+razaDualWidget(c.raza||'','cm-raz-p','cm-raz-m')+'</div>'
     +'<div class="field"><label>Campo destino</label>'+selHtml(camposOpts(),c.campoId||'','Sin asignar','cm-cam')+'</div>'
     +'<div class="field"><label>Feria / Origen</label><input id="cm-fer" value="'+(c.feria||'')+'" placeholder="Ej: Feria de Durazno"></div>'
-    +'<div class="field"><label>Precio ($)</label><input id="cm-pre" type="number" value="'+(c.precio||'')+'"></div>'
-    +'<div class="field"><label>Peso (kg)</label><input id="cm-pes" type="number" value="'+(c.peso||'')+'"></div>'
+    +'<div class="field"><label>Precio ($)</label><input id="cm-pre" type="number" inputmode="decimal" value="'+(c.precio||'')+'"></div>'
+    +'<div class="field"><label>Peso (kg)</label><input id="cm-pes" type="number" inputmode="decimal" value="'+(c.peso||'')+'"></div>'
     +'<div class="field"><label>Fecha Nac. (Mes/Año)</label>'+fechaNacWidget(c.anioNac||'','cm-mes','cm-anio')+'</div>'
     +'<div class="field"><label>Sexo</label><select id="cm-sex"><option value="H"'+(c.sexo==='H'?' selected':'')+'>Hembra</option><option value="M"'+(c.sexo==='M'?' selected':'')+'>Macho</option></select></div>'
     +'<div class="field"><label>Marca</label>'+selHtml(getMarcasList().map(function(m){return{v:m.iniciales,l:m.nombre};}),c.marca||'','Sin marca','cm-marca')+'</div>'
@@ -4459,8 +4460,8 @@ function ventaModal(v){
     +'<div class="fgrid">'
     +'<div class="field"><label>Fecha</label><input id="vt-fec" type="date" value="'+(v.fecha||'')+'"></div>'
     +'<div class="field"><label>Animal</label>'+animalOpts+'</div>'
-    +'<div class="field"><label>Precio ($)</label><input id="vt-pre" type="number" value="'+(v.precio||'')+'"></div>'
-    +'<div class="field"><label>Peso (kg)</label><input id="vt-pes" type="number" value="'+(v.peso||'')+'"></div>'
+    +'<div class="field"><label>Precio ($)</label><input id="vt-pre" type="number" inputmode="decimal" value="'+(v.precio||'')+'"></div>'
+    +'<div class="field"><label>Peso (kg)</label><input id="vt-pes" type="number" inputmode="decimal" value="'+(v.peso||'')+'"></div>'
     +'<div class="field"><label>Comprador</label><input id="vt-com" value="'+(v.comprador||'')+'" placeholder="Nombre o empresa"></div>'
     +'<div class="field"><label>Feria / Local</label><input id="vt-fer" value="'+(v.feria||'')+'" placeholder="Ej: Feria de Durazno"></div>'
     +'<div class="field"><label>Observaciones</label><input id="vt-obs" value="'+(v.obs||'')+'"></div>'
