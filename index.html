@@ -102,6 +102,9 @@ html,body{height:100%;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
 .nav-sec{padding:10px 0 2px}
 .nav-sec-lbl{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
   color:rgba(200,220,180,.3);padding:0 14px 5px}
+.nav-grp-lbl{font-size:8px;font-weight:600;letter-spacing:1px;text-transform:uppercase;
+  color:rgba(200,220,180,.22);padding:8px 14px 2px 22px}
+.nav-btn-sub{padding-left:24px}
 .nav-btn{display:flex;align-items:center;gap:10px;padding:11px 14px;
   color:rgba(200,220,180,.78);cursor:pointer;font-size:14px;
   border-left:3px solid transparent;transition:background .12s,color .12s;
@@ -1706,8 +1709,8 @@ function parseXLSX(file,cb){
 
 // ── NAV ──────────────────────────────────────────────────────────────────────
 // Registro de versión de la aplicación — actualizar manualmente en cada release
-var APP_VERSION = '1.1.0';
-var APP_BUILD_DATE = '2026-07-11'; // se actualiza automáticamente cuando Claude modifica el archivo
+var APP_VERSION = '1.2.0';
+var APP_BUILD_DATE = '2026-08-04'; // se actualiza automáticamente cuando Claude modifica el archivo
 
 var PAGES=[
   {id:'dashboard',  lbl:'Panel General',    ico:'⊞', sec:'Principal'},
@@ -1716,23 +1719,23 @@ var PAGES=[
   {id:'campos',     lbl:'Campos',           ico:'▦',  sec:'Gestión'},
   {id:'mejoras',    lbl:'Mejoras de Tierra',ico:'⬡', sec:'Gestión'},
   {id:'animales',   lbl:'Animales',         ico:'◎',  sec:'Hacienda'},
-  {id:'entores',    lbl:'Entore',           ico:'⊕',  sec:'Hacienda'},
-  {id:'pariciones', lbl:'Resultado Entore',  ico:'⊗',  sec:'Hacienda'},
-  {id:'crias',      lbl:'Cría / Nacimientos',ico:'◌', sec:'Hacienda'},
-  {id:'destetes',   lbl:'Destete',          ico:'⊘',  sec:'Hacienda'},
-  {id:'vacunas',    lbl:'Vacunaciones',     ico:'⊛',  sec:'Hacienda'},
-  {id:'compras',    lbl:'Compras en Feria', ico:'⊟',  sec:'Hacienda'},
-  {id:'ventas',     lbl:'Ventas',           ico:'⊠',  sec:'Hacienda'},
-  {id:'muertes',    lbl:'Mortandad',        ico:'⊗',  sec:'Hacienda'},
-  {id:'caravanas',  lbl:'Cambio de Caravana',ico:'⊜', sec:'Hacienda'},
-  {id:'marcas',     lbl:'Marcas',             ico:'⊕', sec:'Gestión'},
-  {id:'razas',      lbl:'Razas',              ico:'⊘', sec:'Gestión'},
-  {id:'reportes',   lbl:'Reportes',           ico:'⊟', sec:'Reportes'},
+  {id:'entores',    lbl:'Entore',           ico:'⊕', sec:'Hacienda', grp:'Reproducción'},
+  {id:'pariciones', lbl:'Resultado Entore',  ico:'♥',  sec:'Hacienda', grp:'Reproducción'},
+  {id:'crias',      lbl:'Cría / Nacimientos',ico:'◌', sec:'Hacienda', grp:'Reproducción'},
+  {id:'destetes',   lbl:'Destete',          ico:'⊘',  sec:'Hacienda', grp:'Reproducción'},
+  {id:'vacunas',    lbl:'Vacunaciones',     ico:'⊛',  sec:'Hacienda', grp:'Sanidad'},
+  {id:'muertes',    lbl:'Mortandad',        ico:'☠',  sec:'Hacienda', grp:'Sanidad'},
+  {id:'compras',    lbl:'Compras en Feria', ico:'⊟',  sec:'Hacienda', grp:'Movimientos'},
+  {id:'ventas',     lbl:'Ventas',           ico:'⊠',  sec:'Hacienda', grp:'Movimientos'},
+  {id:'caravanas',  lbl:'Cambio de Caravana',ico:'⊜', sec:'Hacienda', grp:'Movimientos'},
+  {id:'asignarcampo',lbl:'Asignar Campo',      ico:'⊡', sec:'Hacienda', grp:'Movimientos'},
+  {id:'asignarpotrero',lbl:'Asignar Potrero',  ico:'⛭', sec:'Hacienda', grp:'Movimientos'},
+  {id:'manejo',      lbl:'Manejo del Ganado',  ico:'⇄', sec:'Hacienda', grp:'Movimientos'},
+  {id:'marcas',     lbl:'Marcas',             ico:'🏷', sec:'Gestión'},
+  {id:'razas',      lbl:'Razas',              ico:'❋', sec:'Gestión'},
+  {id:'reportes',   lbl:'Reportes',           ico:'📊', sec:'Reportes'},
   {id:'lector',     lbl:'Lector Planillas',   ico:'📷', sec:'Reportes'},
   {id:'planillaspdf',lbl:'Planillas PDF',      ico:'📄', sec:'Reportes'},
-  {id:'asignarcampo',lbl:'Asignar Campo',      ico:'⊡', sec:'Hacienda'},
-  {id:'asignarpotrero',lbl:'Asignar Potrero',  ico:'⊞', sec:'Hacienda'},
-  {id:'manejo',      lbl:'Manejo del Ganado',  ico:'⊞', sec:'Hacienda'},
 ];
 var PAGE_SUB={
   dashboard:'Resumen del establecimiento',existencias:'Inventario por categoría',
@@ -1759,8 +1762,19 @@ function renderNav(){
     +'☀ Modo exterior (mayor contraste)</label>';
   secs.forEach(function(s){
     h+='<div class="nav-sec"><div class="nav-sec-lbl">'+s+'</div>';
-    PAGES.filter(function(p){return p.sec===s}).forEach(function(p){
-      h+='<div class="nav-btn'+(p.id===curPage?' on':'')+'" onclick="goPage(\''+p.id+'\')"><span class="nav-ico">'+p.ico+'</span>'+p.lbl+'</div>';
+    // Dentro de una sección, las páginas con el mismo grp (ej. "Reproducción",
+    // "Sanidad", "Movimientos" en Hacienda) se agrupan bajo un sub-encabezado
+    // más chico. Páginas sin grp se muestran sueltas, como antes.
+    var pagsSec = PAGES.filter(function(p){return p.sec===s;});
+    var grupoActual = null;
+    pagsSec.forEach(function(p){
+      if(p.grp && p.grp !== grupoActual){
+        grupoActual = p.grp;
+        h += '<div class="nav-grp-lbl">'+p.grp+'</div>';
+      } else if(!p.grp){
+        grupoActual = null;
+      }
+      h+='<div class="nav-btn'+(p.grp?' nav-btn-sub':'')+(p.id===curPage?' on':'')+'" onclick="goPage(\''+p.id+'\')"><span class="nav-ico">'+p.ico+'</span>'+p.lbl+'</div>';
     });
     h+='</div>';
   });
@@ -1773,7 +1787,7 @@ function renderNav(){
     +'GanaderíaApp v'+APP_VERSION+' &middot; '+APP_BUILD_DATE+'</div>';
   document.getElementById('sidebar').innerHTML=h;
 }
-function goPage(id){
+function goPage(id, param){
   curPage=id;renderNav();
   var pg=PAGES.find(function(p){return p.id===id});
   document.getElementById('pg-title').textContent=pg.lbl;
@@ -1781,7 +1795,7 @@ function goPage(id){
   document.getElementById('topbar-ext').innerHTML='';
   closeSidebar();
   renderBottomNav();
-  var fn=RENDERERS[id];if(fn)fn();
+  var fn=RENDERERS[id];if(fn)fn(param);
   // Scroll to top on page change (mobile)
   var content=document.getElementById('content');
   if(content) content.scrollTop=0;
@@ -2197,6 +2211,7 @@ function renderPotreros(campoId){
   var totalAnimalesCampo=state.animales.filter(function(a){return a.campoId===campoId&&(a.estado||'activo')==='activo';}).length;
   var hdr='<div class="panel-hdr"><h3>Potreros de '+campo.nombre+' <span class="badge bg" style="margin-left:6px">'+totalAnimalesCampo+' animal(es) en total</span></h3>'
     +'<div class="btns"><button class="btn btn-s btn-sm" onclick="renderCampos()">← Volver a Campos</button>'
+    +'<button class="btn btn-s btn-sm" onclick="goPage(\'asignarpotrero\',\''+campoId+'\')" title="Asignar animales a un potrero de este campo, sin tener que elegirlo de nuevo">⛭ Asignar animales</button>'
     +'<button class="btn btn-p btn-sm" onclick="newPotrero(\''+campoId+'\')">+ Nuevo potrero</button></div></div>';
   var nota='<div class="alert alert-info" style="margin:0 18px 12px">'
     +'Este campo tiene <b>'+mejorasDelCampo.length+'</b> mejora(s) registrada(s)'
@@ -2444,21 +2459,31 @@ function renderAnimales(){
     +'<div class="panel-body" style="padding-bottom:4px"><div class="filters">'
     +'<div class="field"><label>Buscar</label><input id="ani-search-d" value="'+aniSearch+'" inputmode="numeric" oninput="aniSearch=this.value;conFocoPreservado(renderAnimales)" placeholder="Caravana..."></div>'
     +'<div class="field"><label>Categoría</label><select onchange="aniCat=this.value;renderAnimales()"><option value="">Todas</option>'+CAT_NAMES.map(function(c){return'<option'+(aniCat===c?' selected':'')+'>'+c+'</option>'}).join('')+'</select></div>'
+    +'<div class="field"><label>Campo</label><select onchange="aniCampo=this.value;aniPotrero=\'\';renderAnimales()"><option value="">Todos</option>'+state.campos.map(function(c){return'<option value="'+c.id+'"'+(aniCampo===c.id?' selected':'')+'>'+c.nombre+'</option>'}).join('')+'</select></div>'
     +(function(){
-        // Build raza options from actual animal data (includes combined razas like "AA x HE")
+        var filtrosExtraActivos=[aniPotrero,aniEstado,aniMarca,aniRaza].filter(Boolean).length;
         var razasEnUso = [];
         state.animales.forEach(function(a){
           if(a.raza && razasEnUso.indexOf(a.raza)===-1) razasEnUso.push(a.raza);
         });
         razasEnUso.sort();
-        return'<div class="field"><label>Raza</label><select onchange="aniRaza=this.value;renderAnimales()"><option value="">Todas</option>'
-          +razasEnUso.map(function(r){return'<option value="'+r+'"'+(aniRaza===r?' selected':'')+'>'+r+'</option>';}).join('')
-          +'</select></div>';
+        // Patrón colapsable: 2 filtros principales siempre visibles (Categoría,
+        // Campo), el resto (Potrero, Estado, Marca, Raza) dentro de "Más
+        // filtros" — mismo criterio ya aplicado en Reportes, propagado acá
+        // porque 6 selects seguidos eran ilegibles en pantallas angostas.
+        return '<details style="grid-column:1/-1;margin-top:4px">'
+          +'<summary style="cursor:pointer;font-size:12.5px;color:var(--txt2);padding:6px 0;font-weight:600">'
+          +'Más filtros'+(filtrosExtraActivos?' ('+filtrosExtraActivos+' activo'+(filtrosExtraActivos!==1?'s':'')+')':'')
+          +'</summary>'
+          +'<div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">'
+          +'<div class="field"><label>Potrero</label>'+(aniCampo?'<select onchange="aniPotrero=this.value;renderAnimales()"><option value="">Todos</option>'+potrerosOpts(aniCampo).map(function(p){return'<option value="'+p.v+'"'+(aniPotrero===p.v?' selected':'')+'>'+p.l+'</option>';}).join('')+'</select>':'<select disabled><option>Elija un campo</option></select>')+'</div>'
+          +'<div class="field"><label>Estado</label><select onchange="aniEstado=this.value;renderAnimales()"><option value="">Todos</option>'+ESTADOS_ANI.map(function(s){return'<option'+(aniEstado===s?' selected':'')+' value="'+s+'">'+s+'</option>'}).join('')+'</select></div>'
+          +'<div class="field"><label>Marca</label><select onchange="aniMarca=this.value;renderAnimales()"><option value="">Todas</option>'+getMarcasList().map(function(m){return'<option value="'+m.id+'"'+(aniMarca===m.id?' selected':'')+'>'+m.nombre+'</option>'}).join('')+'</select></div>'
+          +'<div class="field"><label>Raza</label><select onchange="aniRaza=this.value;renderAnimales()"><option value="">Todas</option>'
+            +razasEnUso.map(function(r){return'<option value="'+r+'"'+(aniRaza===r?' selected':'')+'>'+r+'</option>';}).join('')
+            +'</select></div>'
+          +'</div></details>';
       }())
-    +'<div class="field"><label>Campo</label><select onchange="aniCampo=this.value;aniPotrero=\'\';renderAnimales()"><option value="">Todos</option>'+state.campos.map(function(c){return'<option value="'+c.id+'"'+(aniCampo===c.id?' selected':'')+'>'+c.nombre+'</option>'}).join('')+'</select></div>'
-    +'<div class="field"><label>Potrero</label>'+(aniCampo?'<select onchange="aniPotrero=this.value;renderAnimales()"><option value="">Todos</option>'+potrerosOpts(aniCampo).map(function(p){return'<option value="'+p.v+'"'+(aniPotrero===p.v?' selected':'')+'>'+p.l+'</option>';}).join('')+'</select>':'<select disabled><option>Elija un campo</option></select>')+'</div>'
-    +'<div class="field"><label>Estado</label><select onchange="aniEstado=this.value;renderAnimales()"><option value="">Todos</option>'+ESTADOS_ANI.map(function(s){return'<option'+(aniEstado===s?' selected':'')+' value="'+s+'">'+s+'</option>'}).join('')+'</select></div>'
-    +'<div class="field"><label>Marca</label><select onchange="aniMarca=this.value;renderAnimales()"><option value="">Todas</option>'+getMarcasList().map(function(m){return'<option value="'+m.id+'"'+(aniMarca===m.id?' selected':'')+'>'+m.nombre+'</option>'}).join('')+'</select></div>'
     +'</div></div>'
     +'<div class="tbl-wrap"><table><thead><tr><th onclick="toggleOrdenCaravana()" style="cursor:pointer;user-select:none" title="Ordenar por caravana">Caravana'+(aniOrdenCaravana==='asc'?' ▲':aniOrdenCaravana==='desc'?' ▼':' ⇅')+'</th><th>Categoría</th><th>Raza</th><th>Campo</th><th>Potrero</th><th>Año Nac.</th><th>Edad</th><th>Marca</th><th>Peso kg</th><th>Estado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
 }
@@ -5800,7 +5825,11 @@ function confirmarAsignarCampo(){
 // disponibles en el selector de destino — un animal del Campo A no puede
 // asignarse a un potrero que pertenece al Campo B.
 var _apSearch='',_apCat='',_apCampoFiltro='',_apSelIds=[],_apFiltered=[];
-function renderAsignarPotrero(){
+function renderAsignarPotrero(campoIdPreseleccionado){
+  // Atajo desde renderPotreros: si viene un campo pre-elegido, se precarga
+  // el filtro antes de renderizar — evita que el usuario tenga que volver
+  // a elegir el mismo campo que ya estaba viendo en la pantalla anterior.
+  if(campoIdPreseleccionado){ _apCampoFiltro=campoIdPreseleccionado; }
   var activos=state.animales.filter(function(a){return(a.estado||'activo')==='activo';});
   var filtered=activos.filter(function(a){
     if(_apSearch&&(a.caravana||'').toLowerCase().indexOf(_apSearch.toLowerCase())===-1)return false;
