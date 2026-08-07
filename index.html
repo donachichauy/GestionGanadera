@@ -4561,20 +4561,61 @@ function renderMuertes(){
 }
 
 function muerteModal(){
-  var animalOpts = selHtml(_activosOpts(),'','Seleccionar animal...','mt-ani');
   var CAUSAS = ['Enfermedad','Accidente','Parto','Predador','Desconocida','Otra'];
   return '<div class="modal-hdr"><h3>Registrar muerte</h3>'
     +'<button class="close-x" onclick="closeModal()">&#215;</button></div>'
     +'<div class="modal-body">'
     +'<div class="fgrid">'
     +'<div class="field"><label>Fecha</label><input id="mt-fec" type="date" value="'+new Date().toISOString().slice(0,10)+'"></div>'
-    +'<div class="field"><label>Animal</label>'+animalOpts+'</div>'
+    +'<div class="field full">'
+    +'<label>Animal</label>'
+    +'<input id="mt-busq" inputmode="numeric" placeholder="🔍 Buscar por caravana..." style="width:100%;padding:9px 12px;border:1.5px solid var(--brd);border-radius:var(--rad);font-size:13px" oninput="buscarAnimalParaMuerte()">'
+    +'<input type="hidden" id="mt-ani">'
+    +'<div id="mt-resultados" style="margin-top:8px"></div>'
+    +'<div id="mt-seleccionado" style="margin-top:8px"></div>'
+    +'</div>'
     +'<div class="field"><label>Causa</label>'+selHtml(CAUSAS,'','Seleccionar causa...','mt-cau')+'</div>'
     +'<div class="field"><label>Observaciones</label><input id="mt-obs" placeholder="Detalles..."></div>'
     +'</div></div>'
     +'<div class="modal-foot">'
     +'<button class="btn btn-s" onclick="closeModal()">Cancelar</button>'
     +'<button class="btn btn-p" onclick="saveMuerte()">Registrar</button>'
+    +'</div>';
+}
+// Búsqueda por caravana con teclado numérico, mismo patrón ya usado en
+// Cambio de Caravana — reemplaza el <select> con todos los animales
+// listados de una vez, que en un rodeo grande obligaba a scrollear una
+// lista larga dentro del propio select nativo.
+function buscarAnimalParaMuerte(){
+  var q = (document.getElementById('mt-busq').value||'').toLowerCase().trim();
+  var el = document.getElementById('mt-resultados');
+  if(!q){ el.innerHTML=''; return; }
+  var found = _activosOpts().filter(function(o){
+    var a = getAnimal(o.v);
+    return a && (a.caravana||'').toLowerCase().includes(q);
+  }).slice(0,10);
+  if(!found.length){ el.innerHTML='<p style="color:var(--txt3);font-size:13px">Sin resultados.</p>'; return; }
+  el.innerHTML = found.map(function(o){
+    var a = getAnimal(o.v);
+    return '<div style="display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--brdf);border-radius:var(--rad);margin-bottom:6px;background:var(--card)">'
+      +'<div style="flex:1">'
+      +'<div style="font-family:monospace;font-weight:700;font-size:13px">'+(a.caravana?formatCaravana(a.caravana):'Sin caravana')+'</div>'
+      +'<div style="font-size:11px;color:var(--txt3)">'+(a.categoria||'—')+' · '+(a.raza||'—')+'</div>'
+      +'</div>'
+      +'<button class="btn btn-s btn-sm" onclick="seleccionarAnimalMuerte(\''+a.id+'\')">Seleccionar</button>'
+      +'</div>';
+  }).join('');
+}
+function seleccionarAnimalMuerte(animalId){
+  var a = getAnimal(animalId);
+  if(!a) return;
+  document.getElementById('mt-ani').value = animalId;
+  document.getElementById('mt-busq').value = a.caravana?formatCaravana(a.caravana):'Sin caravana';
+  document.getElementById('mt-resultados').innerHTML = '';
+  document.getElementById('mt-seleccionado').innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--g50);border-radius:var(--rad);font-size:13px">'
+    +'<span><b>'+(a.caravana?formatCaravana(a.caravana):'Sin caravana')+'</b> — '+(a.categoria||'—')+'</span>'
+    +'<button class="btn btn-d btn-sm" onclick="document.getElementById(\'mt-ani\').value=\'\';document.getElementById(\'mt-busq\').value=\'\';document.getElementById(\'mt-seleccionado\').innerHTML=\'\'">Cambiar</button>'
     +'</div>';
 }
 
