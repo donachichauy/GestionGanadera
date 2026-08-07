@@ -2497,6 +2497,15 @@ function verAnimal(id){
       +'<div class="hist-date">'+h.fecha+(h.auto?' (automático)':'')+'</div></div></div>';
   }).join('');
 
+  // ── Historial de campos ──────────────────────────────────────────────────
+  // a.histCampo ya se guardaba en cada movimiento (confirmarManejo) pero
+  // nunca se mostraba en ningún lado — el dato existía, solo estaba oculto.
+  var histCampoHtml=(a.histCampo||[]).map(function(h){
+    return'<div class="hist-item"><div class="hist-dot" style="background:var(--a400)"></div>'
+      +'<div class="hist-content"><b>'+h.de+' → '+h.a+'</b>'
+      +'<div class="hist-date">'+h.fecha+'</div></div></div>';
+  }).join('');
+
   // ── Historial vacunaciones ───────────────────────────────────────────────
   var vacHist = state.vacunas.filter(function(v){
     return (v.animalesIds||[]).indexOf(id) > -1;
@@ -2532,30 +2541,42 @@ function verAnimal(id){
 
   // ── Reproductivo (solo hembras) ──────────────────────────────────────────
   var reproHtml = '';
+  var histEntoreHtml = '';
   if(a.sexo==='H' || (a.categoria||'').indexOf('Vaca')>-1 || (a.categoria||'').indexOf('Vaquillona')>-1){
-    // Entores donde participa
+    // Entores donde participa — ya filtraba correctamente TODOS, pero antes
+    // solo se usaba el más reciente ([0] del array ordenado), descartando
+    // el resto. Ahora se muestra el historial completo, más el estado
+    // actual destacado arriba para verlo de un vistazo.
     var entoresVaca = state.entores.filter(function(e){
       return (e.vacasIds||[]).indexOf(id) > -1;
-    });
-    // Resultado parición actual/último
-    var ultimoEntore = entoresVaca.sort(function(a,b){
+    }).sort(function(a,b){
       return (b.fechaInicio||'').localeCompare(a.fechaInicio||'');
-    })[0];
-    var ultimoPar = ultimoEntore
-      ? state.pariciones.find(function(p){return p.entoreId===ultimoEntore.id && p.vacaId===id;})
-      : null;
+    });
+    var resLabelMap = {parto:'✓ Parió',ternero_muerto:'✗ Ternero muerto',no_prenia:'○ No preñada','':'□ Pendiente'};
+    var resColorMap = {parto:'var(--gm)',ternero_muerto:'var(--rd)',no_prenia:'var(--txt3)','':'var(--ad)'};
     var estadoRepro = '';
-    if(ultimoEntore){
-      var toro = getAnimal(ultimoEntore.machoId);
-      var res = ultimoPar ? ultimoPar.resultado : '';
-      var resLabel = {parto:'✓ Parió',ternero_muerto:'✗ Ternero muerto',no_prenia:'○ No preñada','':'□ Pendiente'}[res]||'□ Pendiente';
-      var resColor = {parto:'var(--gm)',ternero_muerto:'var(--rd)',no_prenia:'var(--txt3)','':'var(--ad)'}[res]||'var(--ad)';
+    if(entoresVaca.length){
+      var ultimoEntore = entoresVaca[0];
+      var ultimoPar = state.pariciones.find(function(p){return p.entoreId===ultimoEntore.id && p.vacaId===id;});
+      var toroUlt = getAnimal(ultimoEntore.machoId);
+      var resUlt = ultimoPar ? ultimoPar.resultado : '';
       estadoRepro = '<div style="margin-top:4px">'
         +'<div style="font-size:11px;color:var(--txt3)">Último entore: '+(ultimoEntore.fechaInicio||'—')
-        +' · Toro: <b>'+(toro?formatCaravana(toro.caravana):'—')+'</b></div>'
-        +'<div style="margin-top:4px"><span style="font-weight:700;color:'+resColor+'">'+resLabel+'</span></div>'
+        +' · Toro: <b>'+(toroUlt?formatCaravana(toroUlt.caravana):'—')+'</b></div>'
+        +'<div style="margin-top:4px"><span style="font-weight:700;color:'+(resColorMap[resUlt]||'var(--ad)')+'">'+(resLabelMap[resUlt]||'□ Pendiente')+'</span></div>'
         +(ultimoPar&&ultimoPar.obs?'<div style="font-size:11px;color:var(--txt3);margin-top:2px">'+ultimoPar.obs+'</div>':'')
         +'</div>';
+
+      // Historial completo: uno por cada entore en el que participó,
+      // más antiguo que el "último" ya mostrado arriba como estado actual.
+      histEntoreHtml = entoresVaca.map(function(e){
+        var par = state.pariciones.find(function(p){return p.entoreId===e.id && p.vacaId===id;});
+        var toro = getAnimal(e.machoId);
+        var res = par ? par.resultado : '';
+        return '<div class="hist-item"><div class="hist-dot" style="background:'+(resColorMap[res]||'var(--ad)')+'"></div>'
+          +'<div class="hist-content"><b>Entore '+(e.fechaInicio||'—')+'</b> · Toro: '+(toro?formatCaravana(toro.caravana):'—')
+          +'<div class="hist-date">'+(resLabelMap[res]||'□ Pendiente')+(par&&par.obs?' — '+par.obs:'')+'</div></div></div>';
+      }).join('');
     }
     reproHtml = estadoRepro
       || '<p style="color:var(--txt3);font-size:12px">Sin entore registrado.</p>';
@@ -2595,6 +2616,8 @@ function verAnimal(id){
     +vacHtml
     // ── Cat history ──
     +(hist?'<hr class="divider"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--txt3);margin-bottom:6px">Cambios de categoría</div>'+hist:'')
+    +(histCampoHtml?'<hr class="divider"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--txt3);margin-bottom:6px">Historial de campos</div>'+histCampoHtml:'')
+    +(histEntoreHtml?'<hr class="divider"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--txt3);margin-bottom:6px">Historial de entores</div>'+histEntoreHtml:'')
     +'</div>'
     +'<div class="modal-foot">'
     +'<button class="btn btn-s" onclick="closeModal()">Cerrar</button>'
@@ -4536,9 +4559,14 @@ function delVenta(id){
 
 
 // ── MORTANDAD ─────────────────────────────────────────────────────────────────
+var _mtSearch='';
 function renderMuertes(){
-  var rows = state.muertes.length
-    ? state.muertes.map(function(m){
+  var lista = state.muertes.filter(function(m){
+    if(!_mtSearch) return true;
+    return (m.caravana||'').toLowerCase().indexOf(_mtSearch.toLowerCase())>-1;
+  });
+  var rows = lista.length
+    ? lista.map(function(m){
         return '<tr>'
           +'<td class="mono">'+(m.fecha||'—')+'</td>'
           +'<td class="mono" style="font-weight:700">'+(m.caravana?formatCaravana(m.caravana):'—')+'</td>'
@@ -4546,15 +4574,19 @@ function renderMuertes(){
           +'<td>'+(m.causa||'—')+'</td>'
           +'<td>'+(m.obs||'—')+'</td>'
           +'<td><div class="btns">'
+            +(m.animalId?'<button class="btn btn-s btn-sm" onclick="verAnimal(\''+m.animalId+'\')">Ver historial</button>':'')
             +'<button class="btn btn-d btn-sm" onclick="delMuerte(\''+m.id+'\')">Elim.</button>'
           +'</div></td></tr>';
       }).join('')
-    : '<tr class="no-data"><td colspan="6">'+empty('⊗','Sin registros de mortandad','Registre una muerte.')+'</td></tr>';
+    : '<tr class="no-data"><td colspan="6">'+empty('⊗',_mtSearch?'Sin resultados':'Sin registros de mortandad',_mtSearch?'Pruebe con otra caravana.':'Registre una muerte.')+'</td></tr>';
 
   document.getElementById('content').innerHTML =
     '<div class="panel"><div class="panel-hdr"><h3>Mortandad</h3>'
     +'<button class="btn btn-p btn-sm" onclick="newMuerte()">+ Registrar muerte</button>'
     +'</div>'
+    +'<div class="panel-body" style="padding-bottom:4px"><div class="filters">'
+    +'<div class="field"><label>Buscar</label><input id="mt-search" value="'+_mtSearch+'" inputmode="numeric" oninput="_mtSearch=this.value;conFocoPreservado(renderMuertes)" placeholder="Caravana..."></div>'
+    +'</div></div>'
     +'<div class="tbl-wrap"><table><thead><tr>'
     +'<th>Fecha</th><th>Caravana</th><th>Categoría</th><th>Causa</th><th>Observaciones</th><th></th>'
     +'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
